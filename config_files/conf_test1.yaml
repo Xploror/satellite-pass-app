@@ -25,8 +25,9 @@ Assets:
     Color: Pink
 
 Lab:
+  City: 
   Latitude: 37.7749
   Longitude: -122.4194
   min_elevation: 5
 
-Output: 1  # 1-> STDOUT | 2-> FILE | 3-> TCP connection
+Output: 2  # 1-> STDOUT | 2-> FILE | 3-> TCP connection
