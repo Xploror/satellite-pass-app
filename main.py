@@ -4,8 +4,13 @@ from lib.output import *
 from datetime import datetime, timezone
 import time
 
+# INPUT DESIRED CONFIG FILE
+conf_file_name = input("Enter config file name (default: conf_default): ")
+if conf_file_name == "":
+    conf_file_name = "conf_default" 
+
 # FIRST READ THE CONFIG YAML FILE AND CREATE DESIRED OBJECTS
-sats, lab, out_type = load_mission_info("config_files/conf_1.yaml")
+sats, lab, out_type = load_mission_info("config_files/" + conf_file_name + ".yaml")
 
 while True:
 

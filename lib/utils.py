@@ -1,16 +1,16 @@
+from lib.systems import Lab
 import requests
 import time
 
 API_KEY = "TBAH4F-ECZHJF-QRNFGX-5T0R"
 
-def fetch_API1(sat_objs, lab_obj, limit=1, days=1):
+def fetch_API1(sat_objs : list, lab_obj : Lab, limit=1, days=1, visible_only=False) -> None:
     '''
     Fetching satellite information from the terrestre tracking APIs.
     '''
 
     lab_lat = lab_obj.lat
     lab_lng = lab_obj.lng
-    visible_only = lab_obj.visible_pass_only
 
     parent_url = "https://sat.terrestre.ar/passes/"
 
@@ -40,7 +40,7 @@ def fetch_API1(sat_objs, lab_obj, limit=1, days=1):
 
 
 
-def fetch_API2(sat_objs, lab_obj, v_type='radiopasses', days=1):
+def fetch_API2(sat_objs : list, lab_obj : Lab, v_type='radiopasses', days=1) -> None:
     '''
     Fetching satellite information from the N2YO tracking APIs.
     '''

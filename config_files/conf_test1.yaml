@@ -1,0 +1,32 @@
+Assets:
+  Sat1: #ISS
+    ID: 25544
+    Color: Red
+  Sat2: #Kuiper
+    ID: 63733
+    Color: Green
+  Sat3: #starlink
+    ID: 45198
+    Color: Blue
+  Sat4: #starlink
+    ID: 45098
+    Color: Maroon
+  Sat5: #Iridium
+    ID: 42809
+    Color: Yellow
+  Sat6: #Oneweb
+    ID: 45427
+    Color: Gray
+  Sat7: #CSS
+    ID: 69049
+    Color: Orange
+  Sat8: #Iridium
+    ID: 41921
+    Color: Pink
+
+Lab:
+  Latitude: 37.7749
+  Longitude: -122.4194
+  min_elevation: 5
+
+Output: 1  # 1-> STDOUT | 2-> FILE | 3-> TCP connection

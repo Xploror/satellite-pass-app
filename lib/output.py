@@ -8,7 +8,7 @@ class OutputWriter:
 
 class stdoutWriter(OutputWriter):
 
-    def write(self, sat_objs:list) -> None:
+    def write(self, sat_objs : list) -> None:
         for sat_obj in sat_objs:
             if sat_obj.is_visible:
                 print(str(sat_obj.id) + ": " + sat_obj.color)
@@ -28,7 +28,7 @@ class TCPWriter(OutputWriter):
         pass
 
 
-def write_output(sat_objs, out_type):
+def write_output(sat_objs : list, out_type : int) -> None:
     '''
     Writes output based on the specified output type.
     '''

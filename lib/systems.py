@@ -2,7 +2,7 @@ from lib.utils import *
 
 class MySatellites:
 
-    def __init__(self, name, id, color):
+    def __init__(self, name : str, id : int, color : str):
         self.name = name
         self.id = id
         self.color = color
@@ -12,7 +12,7 @@ class MySatellites:
 
 class Lab:
 
-    def __init__(self, location, constraints):
+    def __init__(self, location : list, constraints : dict):
         self.lat = location[0]
         self.lng = location[1]
         self.min_elev = constraints['min_elev'] #deg
