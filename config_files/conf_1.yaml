@@ -1,0 +1,20 @@
+Assets:
+  Sat1: #ISS
+    ID: 25544
+    Color: Red
+  Sat2: #Kuiper
+    ID: 63733
+    Color: Green
+  Sat3: #starlink
+    ID: 45198
+    Color: Blue
+  Sat4: #starlink
+    ID: 45098
+    Color: Maroon
+
+Lab:
+  Latitude: -33.4489
+  Longitude: -70.6693
+  min_elevation: 0
+
+Output: 1  # 1-> STDOUT | 2-> FILE | 3-> TCP connection
