@@ -1,16 +1,16 @@
 import requests
 import time
+import sys
 
 API_KEY = "TBAH4F-ECZHJF-QRNFGX-5T0R"
 
-def fetch_API1(sat_objs, lab_obj, limit=1, days=1):
+def fetch_API1(sat_objs : list, lab_obj, limit=1, days=1, visible_only=False) -> None:
     '''
     Fetching satellite information from the terrestre tracking APIs.
     '''
 
     lab_lat = lab_obj.lat
     lab_lng = lab_obj.lng
-    visible_only = lab_obj.visible_pass_only
 
     parent_url = "https://sat.terrestre.ar/passes/"
 
@@ -32,15 +32,14 @@ def fetch_API1(sat_objs, lab_obj, limit=1, days=1):
                 data = response.json()[0]
                 break
             elif count > 100:
-                return 0
+                print("Runtime exceed limit", file=sys.stderr)
 
         timestamp_interval = [float(data['rise']['utc_timestamp']), float(data['set']['utc_timestamp'])]
 
         sat_obj.is_visible = time.time() > timestamp_interval[0] and time.time() < timestamp_interval[1]
 
 
-
-def fetch_API2(sat_objs, lab_obj, v_type='radiopasses', days=1):
+def fetch_API2(sat_objs : list, lab_obj, v_type='radiopasses', days=1) -> None:
     '''
     Fetching satellite information from the N2YO tracking APIs.
     '''
@@ -65,8 +64,7 @@ def fetch_API2(sat_objs, lab_obj, v_type='radiopasses', days=1):
                 data = response.json()
                 break
             elif count > 100:
-                print("Runtime exceed limit")
-                return 0
+                print("Runtime exceed limit", file=sys.stderr)
 
         first_pass = data["positions"][0]
         sat_obj.is_visible = first_pass['elevation'] > min_elev and first_pass['elevation'] < 180 - min_elev
