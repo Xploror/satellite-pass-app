@@ -29,12 +29,14 @@ def fetch_API1(sat_objs : list, lab_obj, limit=1, days=1, visible_only=False) ->
 
             count = count + 1
             if response.status_code == 200:
-                data = response.json()[0]
+                if response.json() != []:
+                    data = response.json()[0]
+                    timestamp_interval = [float(data['rise']['utc_timestamp']), float(data['set']['utc_timestamp'])]
+                else:
+                    timestamp_interval = [0, 0] #For given lab position, satellite is never visible even in future
                 break
             elif count > 100:
                 print("Runtime exceed limit", file=sys.stderr)
-
-        timestamp_interval = [float(data['rise']['utc_timestamp']), float(data['set']['utc_timestamp'])]
 
         sat_obj.is_visible = time.time() > timestamp_interval[0] and time.time() < timestamp_interval[1]
 

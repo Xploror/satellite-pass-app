@@ -1,6 +1,5 @@
 import yaml
 import sys
-from typing import Union
 from lib.systems import *
 
 OPENCAGE_API = "a351b52e9f5047b4942eefcfe3a09ff8"

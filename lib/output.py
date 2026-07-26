@@ -81,7 +81,7 @@ class TCPWriter(OutputWriter):
             print("\033[33mTCP Socket refused to create connection! Please check if address already in use\033[0m", file=sys.stderr)
 
 
-def author(out_type : int, out_f:str = "output", host:str = "127.0.0.1", port:int = 12345) -> OutputWriter:
+def author(out_type : int, out_f:str = "output", host:str = "127.0.0.1", port:int = 12346) -> OutputWriter:
     '''
     Writes output based on the specified output type.
     '''
