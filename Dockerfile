@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-ENV CONFIG_FILENAME=""
+#ENV CONFIG_FILENAME=""
 
 WORKDIR /app
 

@@ -4,7 +4,7 @@ import sys
 
 API_KEY = "TBAH4F-ECZHJF-QRNFGX-5T0R"
 
-def fetch_API1(sat_objs : list, lab_obj, limit=1, days=1, visible_only=False) -> None:
+def fetch_API1(sat_objs: list, lab_obj, limit: int = 1, visible_only: bool = False) -> None:
     '''
     Fetching satellite information from the terrestre tracking APIs.
     '''
@@ -19,15 +19,14 @@ def fetch_API1(sat_objs : list, lab_obj, limit=1, days=1, visible_only=False) ->
 
         url = parent_url + str(sat_id)
 
-        count = 0 
-        while True:
+        for attempt in range(5):
             response = requests.get(url, 
                                     params={"lat":lab_lat, 
                                             "lon":lab_lng, 
                                             "limit":limit, 
-                                            "visible_only":visible_only})
+                                            "visible_only":visible_only},
+                                            timeout=3)
 
-            count = count + 1
             if response.status_code == 200:
                 if response.json() != []:
                     data = response.json()[0]
@@ -35,13 +34,13 @@ def fetch_API1(sat_objs : list, lab_obj, limit=1, days=1, visible_only=False) ->
                 else:
                     timestamp_interval = [0, 0] #For given lab position, satellite is never visible even in future
                 break
-            elif count > 100:
+            elif attempt == 4:
                 print("Runtime exceed limit", file=sys.stderr)
 
         sat_obj.is_visible = time.time() > timestamp_interval[0] and time.time() < timestamp_interval[1]
 
 
-def fetch_API2(sat_objs : list, lab_obj, v_type='radiopasses', days=1) -> None:
+def fetch_API2(sat_objs : list, lab_obj, sec_ahead: int = 1) -> None:
     '''
     Fetching satellite information from the N2YO tracking APIs.
     '''
@@ -55,17 +54,17 @@ def fetch_API2(sat_objs : list, lab_obj, v_type='radiopasses', days=1) -> None:
     for sat_obj in sat_objs:
         sat_id = sat_obj.id
 
-        url = parent_url + "positions" + "/" + str(sat_id) + "/" + str(lab_lat) + "/" + str(lab_lng) + "/" + str(lab_alt) + "/" + str(1) + "/&apiKey=" + API_KEY
+        url = parent_url + "positions" + "/" + str(sat_id) + "/" + str(lab_lat) + "/" + str(lab_lng) + "/" + str(lab_alt) + "/" + str(sec_ahead) + "/&apiKey=" + API_KEY
 
         count = 0 
-        while True:
-            response = requests.get(url)
+        for attempt in range(5):
+            response = requests.get(url, timeout=3)
 
             count = count + 1
             if response.status_code == 200:
                 data = response.json()
                 break
-            elif count > 100:
+            elif attempt == 4:
                 print("Runtime exceed limit", file=sys.stderr)
 
         first_pass = data["positions"][0]

@@ -1,6 +1,7 @@
 import pytest
 import os
 import requests
+from random import random
 
 from lib.config import load_mission_info
 from lib.output import FileWriter, stdoutWriter, author
@@ -21,14 +22,17 @@ def demo_sat_data() -> list:
 
 @pytest.fixture
 def demo_lab() -> Lab:
-    from random import random
     lat = -90 + 180*random()
     lng = -180 + 360*random()
     min_elev = 90*random()
     return Lab([lat,lng], {'min_elev':min_elev})
 
+@pytest.fixture
+def testport() -> int:
+    return 12350
 
-def test_load_mission_info(file_path):
+
+def test_load_mission_info(file_path: str):
     
     sats, lab, out_type = load_mission_info(file_path)
 
@@ -41,7 +45,7 @@ def test_load_mission_info(file_path):
     assert out_type == 2
 
 
-def test_fetch_APIs(demo_sat_data:list, demo_lab:Lab):
+def test_fetch_APIs(demo_sat_data: list, demo_lab: Lab):
 
     for demo_sat in demo_sat_data:
         demo_sat.is_visible = None
@@ -57,7 +61,7 @@ def test_fetch_APIs(demo_sat_data:list, demo_lab:Lab):
 
 
 
-def test_stdoutWriter(demo_sat_data, capsys):
+def test_stdoutWriter(demo_sat_data: list, capsys):
     s1 = demo_sat_data[0]
     s2 = demo_sat_data[1]
     out = author(1)
@@ -67,32 +71,33 @@ def test_stdoutWriter(demo_sat_data, capsys):
     assert captured == [str(s1.id)+": Red", str(s2.id)+": NOT PASSING"]
 
 
-def test_FileWriter(demo_sat_data):
+def test_FileWriter(demo_sat_data: list):
     s1 = demo_sat_data[0]
     s2 = demo_sat_data[1]
     out = author(2)
     out.write(demo_sat_data)
 
-    output_path = "output.txt"
-    assert os.path.exists(output_path) and os.path.getsize(output_path) > 0
+    assert os.path.exists(out.out_f) and os.path.getsize(out.out_f) > 0
 
     # content check
-    with open(output_path, "r") as f:
+    with open(out.out_f, "r") as f:
         lines = [line.strip() for line in f]
     assert str(s1.id)+": Red" in lines and str(s2.id)+": NOT PASSING" in lines
 
     # Remove demo output file generated
-    os.remove(output_path)
+    os.remove(out.out_f)
 
 
-# def test_TCPWriter(demo_sat_data):
-#     s1 = demo_sat_data[0]
-#     s2 = demo_sat_data[1]
-#     out = author(3)
-#     out.write(demo_sat_data)
-
-#     local_url = "http://localhost:12346"
-#     resp = requests.get(local_url, timeout=3)
-#     assert resp.status_code == 200
-#     assert str(s1.id) in resp.text
-#     assert str(s2.id) in resp.text
+def test_TCPWriter(demo_sat_data: list, testport: int):
+    s1 = demo_sat_data[0]
+    s2 = demo_sat_data[1]
+    out = author(3, port=testport)
+    #Testing write function for arbitrary iterations between 1-10
+    for i in range(int(1 + 9*random())):
+        out.write(demo_sat_data)
+        local_url = "http://localhost:" + str(testport)
+        resp = requests.get(local_url, timeout=3)
+        assert resp.status_code == 200
+        assert str(s1.id) + ": Red" in resp.text
+        assert str(s2.id) + ": NOT PASSING" in resp.text
+    del(out)
