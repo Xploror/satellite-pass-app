@@ -1,13 +1,141 @@
 # Satellite-Pass-App
 
+**CURRENTLY WORKING ON OPTIONAL TASKS......**
+
+This python application issues commands when specified satellites are passing over a specified location.
+
+## Table of contents
+
 ## Overview
 
-This python application issues commands when specified satellites are passing over a given location.
+This application runs based on the initial inputs provided in a configuration file and supports three different kinds of output styles giving real-time information on passing satellites of interest.
 
-## Requirements
+All the library functions are included in the **lib** folder, configuration files in the **config_files** folder, and pytest testing script in the **tests** folder. The *main.py* script systematically calls necessary modules to parse the configuration file, create necessary objects, call necessary APIs and write the outputs accordingly. Check the steps of implementation [here](#implementation). Refer to the [example](#example) and the [debugging](#debugging) section for any help navigating the project. 
 
 ## Installation
 
+To set up the satellite-pass-app, there are two ways:
+
+### Local development
+
+The *Makefile* contains necessary instructions to build, test and run the project as follows:
+
+1. Clone the satellite-pass-app repository:
+```
+git clone https://github.com/Xploror/satellite-pass-app.git
+```
+
+2. Enter the project folder and install necessary packages in the virtual environment:
+```
+make test
+```
+
+3. Run necessary functional tests on the project (recommended for first use):
+```
+make test
+```
+
+4. After successful test ecexution. Execute the project using `make run`. Note that this would only run the project using the default configuration in the *conf_default.yaml* file. To [use a different configuration file](#writing-configuration-files) add the `ARGS` argument as
+```
+make run ARGS="<relative/path/of/configfile>"
+```
+An example is:
+```
+make run ARGS="config_files/conf_test1"
+```
+
+### Docker container deployment
+
+The *Dockerfile* contains necessary instructions to build a simple image and run the container as follows:
+
+1. Clone the satellite-pass-app repository:
+```
+git clone https://github.com/Xploror/satellite-pass-app.git
+```
+
+2. Enter the project folder and build the image as:
+```
+docker build -t satellite-pass-app .
+```
+
+3. Run necessary functional tests on the project (recommended for first use):
+```
+docker run --rm -it satellite-pass-app pytest -q
+```
+
+4. Run the container using the built docker image as:
+```
+docker run --rm -it satellite-pass-app
+```
+
 ## Implementation
 
+### Writing configuration files
+
+The YAML configuration file is subdivided into `Assets`, `Lab` and `Output` attributes.
+
+- Assets: Contain details of the desired satellites. Each Nth satellite entry should be keyed as SatN and each such satellite contains two properties, ID and Color
+    - ID (Integer): Unique ID of the satellite equivalent to the assigned NORAD ID.
+    - Color (String): Unique color scheme for this satellite that should be displayed when the satellite is visible to the lab i.e within the lab's field of view.
+
+- Lab: Contain details of the desired observation lab. Each lab has following properties:
+    - City (String): Because this project uses the `opengate` API to search geolocations for cities, a lab can be simply located with just its city name if latitude and longitude values are not known. The existence of a non-empty value for City overrides Latitude and Longitude properties!
+    - Latitude (Float): Exact latitude of the Lab in degrees.
+    - Longitude (Float): Exact longitude of the Lab in degrees.
+    - min_elevation (Float): Minimum elevation angle of the Lab in degrees. Range is 0 to 90 degrees.
+
+- Output (Integer): Desirable output type. Supports three types of output - Terminal output, File output and HTTPServer output. 
+
+> NOTE: OpenCage API has an inbuilt spatial context and is able to estimate a latitude and longitude of a city name that might not exist (spelling mistakes). Thererfore, it is recommended to check the spelling of the City before running the project.
+
+### Understanding output
+
+The output has a specific format that represents which satellites are visible and not visible. `<ID>:<color>` is shown as an output for only those satellites that are visible to the Lab at the very moment. `<ID>: NOT PASSING` is shown as an output for rest of the satellites not visible to the Lab at the very moment.
+
+Additionally both File output and HTTPServer output type contains a timestamp before the actual data to represent the updates at every 10 seconds.
+
+> NOTE: The default output file is located in *log/output.txt*. The file and this respective output folder is created during the FileWriter object instantiation inside *lib/output.py*.
+
+> NOTE: The default HTTPServer output type host is `127.0.0.1` and port is `12346`.
+
 ## Example
+
+The default configuration file contains 4 satellite assets with their respective ID and color. The Lab is located at Blacksburg (my ~~current =~~ recent location) with minimum elevation angle as 0 degrees. For most of the time the terminal output would look like:
+```
+25544: NOT PASSING
+63733: NOT PASSING
+45198: NOT PASSING
+45098: NOT PASSING
+```
+when let's say it sees `63733` and `45098`, then it shows:
+```
+25544: NOT PASSING
+63733: Green
+45198: NOT PASSING
+45098: Maroon
+```
+
+For both File and HTTPServer outputs, it would look as follows:
+```
+[2026-07-27 01:18:35]
+25544: NOT PASSING
+63733: Green
+45198: NOT PASSING
+45098: Maroon
+```
+
+## Debugging
+
+Usually when using HTTPServer connection output type, the default port address might be already in use and the project would throw a runtime error. This could be tackled by obtaining the PID for the process using the port address and manually killing the process using two steps:
+
+Determine the PID:
+```
+sudo lsof -i :12346
+```
+
+Once the PID is determined, kill the proces using:
+```
+sudo kill -9 <PID>
+```
+
+This would free the port and would successfully run the project when using the HTTPServer output type.

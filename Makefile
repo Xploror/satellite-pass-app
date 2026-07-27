@@ -2,6 +2,7 @@ PYTHON ?= python3
 PIP ?= $(PYTHON) -m pip
 VENV ?= .venv
 PYTHON_VENV := $(VENV)/bin/python
+ARGS ?=
 
 .PHONY: install test run docker-build docker-run clean
 
@@ -13,10 +14,14 @@ test:
 	. $(VENV)/bin/activate && pytest -q
 
 run:
-	. $(VENV)/bin/activate && $(PYTHON) main.py
+	. $(VENV)/bin/activate && $(PYTHON) main.py $(ARGS)
 
 docker-build:
 	docker build -t satellite-pass-app .
+
+docker-test:
+    docker build -t satellite-pass-app .
+    docker run --rm -it satellite-pass-app pytest -q
 
 docker-run:
 	docker run --rm -it satellite-pass-app
