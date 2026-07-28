@@ -20,7 +20,34 @@ This python application issues commands when specified satellites are passing ov
 
 This application runs based on the initial inputs provided in a configuration file and supports three different kinds of output styles giving real-time information on passing satellites of interest.
 
-All the library functions are included in the **lib** folder, configuration files in the **config_files** folder, and pytest testing script in the **tests** folder. The *main.py* script systematically calls necessary modules to parse the configuration file, create necessary objects, call necessary APIs and write the outputs accordingly. Check the steps of implementation [here](#implementation). Refer to the [example](#example) and the [debugging](#debugging) section for any help navigating the project. 
+The solution involves calling all the satellites with their respective NORAD ID as an API call that provides the positional and elevation angle information. The elevation angle from the response is enough to compare with the minimum elevation angle of the Lab to determine if the corresponding satellite is visible to the Lab or not.
+
+All the library functions are included in the **lib** folder, configuration files in the **config_files** folder, and pytest testing script in the **tests** folder. The *main.py* script systematically calls necessary modules to parse the configuration file, create necessary objects, call necessary APIs and write the outputs accordingly. 
+
+### Repository Layout
+
+```
+satellite-pass-app/
+├── Dockerfile                  # All docker instructions
+├── Makefile                    # All make instructions
+├── requirements.txt            # Contains all necessary packages for the project
+├── main.py                     # Main file for the application
+├── config_files/               # Stores all the YAML configuration files for the application
+│   ├── conf_default.yaml       # Default configuration file
+│   ├── .
+│   ├── .
+│   └── .
+├── lib/                        # Stores all the library functions for the application
+│   ├── __init__.py             # Artifact for lib package
+│   ├── config.py               # Stores methods to configure application based on the input YAML file
+│   ├── output.py               # Stores methods for supported application outputs
+│   ├── systems.py              # Stores intermediate classes for satellite and lab
+│   └── utils.py                # Stores logic for various API calls supported by the application
+└── tests/                      # unittest folder
+    └── test_myscripts.py       # pytest file for the application
+```
+
+Check the steps of implementation [here](#implementation). Refer to the [example](#example) and the [debugging](#debugging) section for any help navigating the project.
 
 ## Installation
 
@@ -79,6 +106,8 @@ docker run --rm -it satellite-pass-app pytest -q
 ```
 docker run --rm -it satellite-pass-app
 ```
+
+> NOTE: Makefile is also configured to build the docker image, run the unittest and run the respective container using the tags `docker-build`, `docker-test`, and `docker-run`.
 
 ## Implementation
 
@@ -157,3 +186,5 @@ This would free the port and would successfully run the project when using the H
 As a long-term project, I would utilize the API more efficiently rather than calling it every 10 seconds and comparing the elevation angle. I would also create a better frontend for more user-friendly configuration rather than filling out the YAML file where I can add additional functionalities such as enabling lighting constraints on satellites and lab, or scaling the satellite pass logic on a group of labs with their respective color codings. I would also create a nice visualization of labs around the Earth and the respective satellites as dots updating its position with time and representing link colors based on the color scheme.
 
 One of the biggest weakpoint of this application is its reliance on a third party database and a constant network access. In future work, I would most preferably target this specific vulnerability and develop robustness such as importing crucial data of desired satellites like TLEs, access intervals for next few days/weeks/months and keep SGP4 propagator ready for propagation through TLE after imported information expires.
+
+Another useful feature can be the broadcasting of output to multiple hosts (endpoints) in a local network. Making this run in the production environment while maintaining the security!
