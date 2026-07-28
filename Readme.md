@@ -151,3 +151,9 @@ sudo kill -9 <PID>
 ```
 
 This would free the port and would successfully run the project when using the HTTPServer output type.
+
+## Discussion
+
+As a long-term project, I would utilize the API more efficiently rather than calling it every 10 seconds and comparing the elevation angle. I would also create a better frontend for more user-friendly configuration rather than filling out the YAML file where I can add additional functionalities such as enabling lighting constraints on satellites and lab, or scaling the satellite pass logic on a group of labs with their respective color codings. I would also create a nice visualization of labs around the Earth and the respective satellites as dots updating its position with time and representing link colors based on the color scheme.
+
+One of the biggest weakpoint of this application is its reliance on a third party database and a constant network access. In future work, I would most preferably target this specific vulnerability and develop robustness such as importing crucial data of desired satellites like TLEs, access intervals for next few days/weeks/months and keep SGP4 propagator ready for propagation through TLE after imported information expires.
