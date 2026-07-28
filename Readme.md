@@ -37,7 +37,7 @@ git clone https://github.com/Xploror/satellite-pass-app.git
 
 2. Enter the project folder and install necessary packages in the virtual environment:
 ```
-make test
+make install
 ```
 
 3. Run necessary functional tests on the project (recommended for first use):
@@ -45,7 +45,7 @@ make test
 make test
 ```
 
-4. After successful test ecexution. Execute the project using `make run`. Note that this would only run the project using the default configuration in the *conf_default.yaml* file. To [use a different configuration file](#writing-configuration-files) add the `ARGS` argument as
+4. After successful test execution. Execute the project using `make run`. Note that this would only run the project using the default configuration in the *conf_default.yaml* file. To [use a different configuration file](#writing-configuration-files) add the `ARGS` argument as
 ```
 make run ARGS="<relative/path/of/configfile>"
 ```
@@ -53,6 +53,8 @@ An example is:
 ```
 make run ARGS="config_files/conf_test1"
 ```
+
+Additionally, the path of the desirable configuration file can be also specified in the environment variable `CONFIG_FILENAME`
 
 ### Docker container deployment
 
