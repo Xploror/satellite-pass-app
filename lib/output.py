@@ -64,7 +64,7 @@ class FileWriter(OutputWriter):
             else:
                 lines.append(str(sat_obj.id) + ": NOT PASSING\n")
 
-        with open(Path(self.out_f).with_suffix(".txt"), "a+") as f:
+        with open(self.out_f, "a+") as f:
             f.writelines(lines)
 
 
@@ -142,7 +142,7 @@ class TCPWriter(OutputWriter):
         msg = "".join(lines).encode("utf-8")
         self.msg = msg
 
-def author(out_type: int, out_f: str = "output", host: str = "127.0.0.1", port: int = 12346) -> OutputWriter:
+def author(out_type: int, out_f: str, host: str, port: int) -> OutputWriter:
     '''
     Writes output based on the specified output type.
     '''

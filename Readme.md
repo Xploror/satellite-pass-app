@@ -102,9 +102,20 @@ docker build -t satellite-pass-app .
 docker run --rm -it satellite-pass-app pytest -q
 ```
 
-4. Run the container using the built docker image as:
+4. Run the container using the built docker image over default settings as:
 ```
 docker run --rm -it satellite-pass-app
+```
+
+By default the container refers to the environment variables APP_HOST=0.0.0.0 and APP_PORT=80 as default container port address that is served. Docker's port mapping can be used to externally channel data outside the container since the port 80 is exposed.
+
+Since the application allows command arguments and environment variables to have smoother selection of configuration files and output attributes, the `docker run` is enough to run an updated configuration file instead of building the image everytime for new updates in the configuraiton files. For example, if the file *conf_test1.yaml* has to be used with output_type 3 (HTTPServer) and selecting the port as `12345`, then the command looks like:
+```
+docker run --rm -it -p 12345:80 satellite-pass-app config_files/conf_test1 3
+```
+Access the data on localost:12345 using
+```
+curl http://localhost:12345
 ```
 
 > NOTE: Makefile is also configured to build the docker image, run the unittest and run the respective container using the tags `docker-build`, `docker-test`, and `docker-run`.
@@ -141,7 +152,7 @@ Additionally both File output and HTTPServer output type contains a timestamp be
 
 ## Example
 
-The default configuration file contains 4 satellite assets with their respective ID and color. The Lab is located at Blacksburg (my ~~current =~~ recent location) with minimum elevation angle as 0 degrees. For most of the time the terminal output would look like:
+The default configuration file contains 4 satellite assets with their respective ID and color. The Lab is located at Blacksburg (my ~~current~~ recent location) with minimum elevation angle as 0 degrees. For most of the time the terminal output would look like:
 ```
 25544: NOT PASSING
 63733: NOT PASSING

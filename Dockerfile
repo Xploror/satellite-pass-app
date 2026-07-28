@@ -1,12 +1,15 @@
 FROM python:3.12-slim
 
-#ENV CONFIG_FILENAME=""
+ENV APP_HOST=0.0.0.0
+ENV APP_PORT=80
 
 WORKDIR /app
+
+EXPOSE 80
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["python", "main.py"]
+ENTRYPOINT ["python", "main.py"]
