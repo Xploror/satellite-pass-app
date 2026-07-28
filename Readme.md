@@ -6,6 +6,16 @@ This python application issues commands when specified satellites are passing ov
 
 ## Table of contents
 
+- [Overview](#overview)
+- [Installation](#installation)
+    - [Local development](#local-development)
+    - [Docker container deployment](#docker-container-deployment)
+- [Implementation](#implementation)
+    - [Writing configuration files](#writing-configuration-files)
+    - [Understanding output](#understanding-output)
+- [Example](#example)
+- [Debugging](#debugging)
+
 ## Overview
 
 This application runs based on the initial inputs provided in a configuration file and supports three different kinds of output styles giving real-time information on passing satellites of interest.
