@@ -113,7 +113,7 @@ Since the application allows command arguments and environment variables to have
 ```
 docker run --rm -it -p 12345:80 satellite-pass-app config_files/conf_test1 3
 ```
-Access the data on localost:12345 using
+Access the data on localhost:12345 using
 ```
 curl http://localhost:12345
 ```
@@ -199,3 +199,34 @@ As a long-term project, I would utilize the API more efficiently rather than cal
 One of the biggest weakpoint of this application is its reliance on a third party database and a constant network access. In future work, I would most preferably target this specific vulnerability and develop robustness such as importing crucial data of desired satellites like TLEs, access intervals for next few days/weeks/months and keep SGP4 propagator ready for propagation through TLE after imported information expires.
 
 Another useful feature can be the broadcasting of output to multiple hosts (endpoints) in a local network. Making this run in the production environment while maintaining the security!
+
+## OPTIONAL TASK 
+
+### MULTI-STAGE DEV & PROD ENVIRONMENT
+
+The application can be built for the development and production stage using the instructions from the `Dockerfile`. The development environment provides root privilages, installs necessary development tools and runs unit tests while building the image. The production environment creates a non-root user and give them ownsership to the working directory. 
+
+Development and Production images can be individually built as:
+```
+docker build --target development -t satellite-pass-app:dev
+docker build --target production -t satellite-pass-app:prod
+```
+
+The recommended option for building and running both development and production isolated environment is using the `docker-compose.yml` file which automatically references the `Dockerfile` for built instructions along with setting environment variables and necessary ports for individual containers. Simply run the following command to build and start the containers:
+```
+docker compose up
+```
+
+Run the following command to stop all the containers:
+```
+docker compose stop
+```
+
+Run the following command to stop and remove the containers:
+```
+docker compose down
+```
+
+> NOTE: While running `docker compose up`, the development container runs the `conf_test1` YAML file with File output type and production container runs default YAML file with HTTPServer output type.
+
+### FUTURE PLANS FOR DEPLOYMENT/MAINTAINENCE
