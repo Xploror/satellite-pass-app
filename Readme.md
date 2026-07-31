@@ -19,6 +19,7 @@ This python application issues commands when specified satellites are passing ov
     - [Multi-Stage Dev & Prod Environment](#multi-stage-dev--prod-environment)
         - [Docker Compose Layout](#docker-compose-layout)
     - [Future Plans for Deployment/Maintainence](#future-plans-for-deploymentmaintainence)
+- [AI Disclosure](#ai-disclosure)
 
 ## Overview
 
@@ -283,3 +284,9 @@ services
 ### FUTURE PLANS FOR DEPLOYMENT/MAINTAINENCE
 
 As a future development, I would prefer maintaining this project as a Github project with traditional feature branches for individual developers and have an additional staging branch (non-main) where all the final stable features can be pushed from all the developers which can be further passed to the main branch for production ready using Github workflow with push and PR events on main. The desirable actions I would like for this project would be running all the unittests, linting, build and publishing the container. 
+
+## AI Disclosure
+
+This project was developed with the support of AI-assisted development tools. Including Github Copilot and Claude. These tools were used throughout the development process to help investigate implementation challenges, resolve conflicting approaches, explore alternative solutions, and iteratively refine design decisions through technical critiques.
+
+AI-generated suggestions were evaluated, tested, and adapted before being incorporated into the codebase. While these tools contributed ideas, code suggestions, and design feedbacks, all architectural decisions, implementation choices, testing, and final code review were perfromed by a human (me). I remain responsible for the correctness, quality, and maintainability of the project in future. 
