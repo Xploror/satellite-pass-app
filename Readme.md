@@ -1,20 +1,24 @@
 # Satellite-Pass-App
 
-**CURRENTLY WORKING ON OPTIONAL TASKS......**
-
 This python application issues commands when specified satellites are passing over a specified location.
 
 ## Table of contents
 
 - [Overview](#overview)
+    - [Repository Layout](#repository-layout)
 - [Installation](#installation)
     - [Local development](#local-development)
     - [Docker container deployment](#docker-container-deployment)
+    - [Environment variables](#environment-variables)
 - [Implementation](#implementation)
     - [Writing configuration files](#writing-configuration-files)
     - [Understanding output](#understanding-output)
 - [Example](#example)
 - [Debugging](#debugging)
+- [Optional Task](#optional-task)
+    - [Multi-Stage Dev & Prod Environment](#multi-stage-dev--prod-environment)
+        - [Docker Compose Layout](#docker-compose-layout)
+    - [Future Plans for Deployment/Maintainence](#future-plans-for-deploymentmaintainence)
 
 ## Overview
 
@@ -120,6 +124,17 @@ curl http://localhost:12345
 
 > NOTE: Makefile is also configured to build the docker image, run the unittest and run the respective container using the tags `docker-build`, `docker-test`, and `docker-run`.
 
+#### Environment Variables
+
+Below are the environment variables that can be configured in `Dockerfile` and/or `docker-compose.yml` for the application. 
+
+| Environment Variables | Type | Default values |
+| :-------------------: | :--: | :------------: |
+| CONFIG_FILENAME | string | config_files/conf_default | 
+| APP_OUTFILE | string | output | 
+| APP_HOST | string | 127.0.0.1 | 
+| APP_PORT | int | 12346 | 
+
 ## Implementation
 
 ### Writing configuration files
@@ -137,6 +152,15 @@ The YAML configuration file is subdivided into `Assets`, `Lab` and `Output` attr
     - min_elevation (Float): Minimum elevation angle of the Lab in degrees. Range is 0 to 90 degrees.
 
 - Output (Integer): Desirable output type. Supports three types of output - Terminal output, File output and HTTPServer output. 
+
+This application has other means of taking inputs apart from the YAML files and the table below shows preferences from highest to lowest order that explains how the application prioritizes input style for the respective input variable.
+
+| Input Variables | Type | Preferences |
+| :-------------------: | :--: | :---------: |
+| configuration file path | string | CLI, ENV_VAR |
+| output type | int | CLI, YAML |
+| port (backup=8080) | int | CLI, ENV_VAR |
+| host | string | ENV_VAR |
 
 > NOTE: OpenCage API has an inbuilt spatial context and is able to estimate a latitude and longitude of a city name that might not exist (spelling mistakes). Thererfore, it is recommended to check the spelling of the City before running the project.
 
@@ -227,6 +251,35 @@ Run the following command to stop and remove the containers:
 docker compose down
 ```
 
+#### Docker compose layout
+
+```
+services
+├── app-dev                                                 # Development service
+│   ├── build                                   
+│   ├── image: satellite-pass-app:dev
+│   ├── environment
+│   │    ├── APP_HOST: 0.0.0.0
+│   │    ├── APP_PORT: 80
+│   │    └── CONFIG_FILENAME: config_files/conf_test1
+│   ├── ports
+│   │    └── 12346:80
+│   └── command: <optionl>
+└── app-prod                                                # Production service
+│   ├── build                                   
+│   ├── image: satellite-pass-app:prod
+│   ├── environment
+│   │    ├── APP_HOST: 0.0.0.0
+│   │    ├── APP_PORT: 60
+│   │    └── CONFIG_FILENAME: config_files/conf_default
+│   ├── ports
+│   │    ├── 12345:60
+│   │    └── 5000:60
+│   └── command: <optional>
+```
+
 > NOTE: While running `docker compose up`, the development container runs the `conf_test1` YAML file with File output type and production container runs default YAML file with HTTPServer output type.
 
 ### FUTURE PLANS FOR DEPLOYMENT/MAINTAINENCE
+
+As a future development, I would prefer maintaining this project as a Github project with traditional feature branches for individual developers and have an additional staging branch (non-main) where all the final stable features can be pushed from all the developers which can be further passed to the main branch for production ready using Github workflow with push and PR events on main. The desirable actions I would like for this project would be running all the unittests, linting, build and publishing the container. 

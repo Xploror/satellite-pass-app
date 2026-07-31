@@ -1,8 +1,9 @@
 import requests
 import time
 import sys
+import os
 
-API_KEY = "TBAH4F-ECZHJF-QRNFGX-5T0R"
+API_KEY = os.getenv("N2YO_APIKEY", "TBAH4F-ECZHJF-QRNFGX-5T0R")
 
 def fetch_API1(sat_objs: list, lab_obj, limit: int = 1, visible_only: bool = False) -> None:
     '''
@@ -67,6 +68,21 @@ def fetch_API2(sat_objs : list, lab_obj, sec_ahead: int = 1) -> None:
             elif attempt == 4:
                 print("Runtime exceed limit", file=sys.stderr)
 
-        first_pass = data["positions"][0]
-        sat_obj.is_visible = first_pass['elevation'] > min_elev and first_pass['elevation'] < 180 - min_elev
+        try:
+            first_pass = data["positions"][0]
+            sat_obj.is_visible = first_pass['elevation'] > min_elev and first_pass['elevation'] < 180 - min_elev
+        except KeyError:
+            raise KeyError("Exceeded transaction limit for the given API key. Try using a new one!")
 
+
+def is_port_available(host: str, port: int):
+    '''
+    Checks if the host/port address is available to use
+    '''
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as skt:
+        try:
+            skt.bind((host, port))
+            return True
+        except:
+            return False

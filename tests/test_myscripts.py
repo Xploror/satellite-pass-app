@@ -6,11 +6,19 @@ from random import random
 from lib.config import load_mission_info
 from lib.output import FileWriter, stdoutWriter, author
 from lib.systems import MySatellites, Lab
-from lib.utils import fetch_API1, fetch_API2
+from lib.utils import fetch_API1, fetch_API2, is_port_available
 
 @pytest.fixture
 def file_path() -> str:
     return "config_files/" + "conf_test1.yaml"
+
+@pytest.fixture
+def testhost() -> str:
+    return "127.0.0.1"
+
+@pytest.fixture
+def testoutf() -> str:
+    return "randomname"
 
 @pytest.fixture
 def demo_sat_data() -> list:
@@ -42,7 +50,7 @@ def test_load_mission_info(file_path: str):
     assert lab.lat == 37.7749
     assert lab.lng == -122.4194
     assert lab.min_elev == 5
-    assert out_type == 2
+    assert out_type == 3
 
 
 def test_fetch_APIs(demo_sat_data: list, demo_lab: Lab):
@@ -61,20 +69,20 @@ def test_fetch_APIs(demo_sat_data: list, demo_lab: Lab):
 
 
 
-def test_stdoutWriter(demo_sat_data: list, capsys):
+def test_stdoutWriter(demo_sat_data: list, testoutf: str, testhost: str, testport: int, capsys):
     s1 = demo_sat_data[0]
     s2 = demo_sat_data[1]
-    out = author(1)
+    out = author(1, out_f=testoutf, host=testhost, port=testport)
     out.write(demo_sat_data)
 
     captured = capsys.readouterr().out.strip().splitlines()
     assert captured == [str(s1.id)+": Red", str(s2.id)+": NOT PASSING"]
 
 
-def test_FileWriter(demo_sat_data: list):
+def test_FileWriter(demo_sat_data: list, testoutf: str, testhost: str, testport: int):
     s1 = demo_sat_data[0]
     s2 = demo_sat_data[1]
-    out = author(2)
+    out = author(2, out_f=testoutf, host=testhost, port=testport)
     out.write(demo_sat_data)
 
     assert os.path.exists(out.out_f) and os.path.getsize(out.out_f) > 0
@@ -88,10 +96,10 @@ def test_FileWriter(demo_sat_data: list):
     os.remove(out.out_f)
 
 
-def test_TCPWriter(demo_sat_data: list, testport: int):
+def test_TCPWriter(demo_sat_data: list, testoutf: str, testhost: str, testport: int):
     s1 = demo_sat_data[0]
     s2 = demo_sat_data[1]
-    out = author(3, port=testport)
+    out = author(3, out_f=testoutf, host=testhost, port=testport)
     #Testing write function for arbitrary iterations between 1-10
     for i in range(int(1 + 9*random())):
         out.write(demo_sat_data)
@@ -101,3 +109,22 @@ def test_TCPWriter(demo_sat_data: list, testport: int):
         assert str(s1.id) + ": Red" in resp.text
         assert str(s2.id) + ": NOT PASSING" in resp.text
     del(out)
+
+
+def test_is_port_available(testhost: str, testport: int):
+
+    # Free port
+    new_testport = testport + 1 # Using a different port
+    boolval = is_port_available(testhost, new_testport)
+    assert boolval == True
+
+    # Busy port
+    import socket
+    skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    skt.bind((testhost, new_testport))
+    skt.listen()
+
+    boolval = is_port_available(testhost, new_testport)
+    assert boolval == False
+
+    skt.close()
