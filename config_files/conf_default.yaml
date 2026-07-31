@@ -18,4 +18,4 @@ Lab:
   Longitude: #-70.6693
   min_elevation: 0
 
-Output: 1  # 1-> STDOUT | 2-> FILE | 3-> TCP connection
+Output: 3  # 1-> STDOUT | 2-> FILE | 3-> TCP connection
