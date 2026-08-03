@@ -3,6 +3,8 @@ from typing import Any
 from lib.systems import *
 import os
 import sys
+import datetime
+import socket
 from pathlib import Path
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
@@ -54,7 +56,6 @@ class FileWriter(OutputWriter):
         '''
         Write the output in a file
         '''
-        import datetime
         now = datetime.datetime.now()
 
         lines = ["[" + now.strftime("%Y-%m-%d %H:%M:%S") + "]\n"]
@@ -68,7 +69,7 @@ class FileWriter(OutputWriter):
             f.writelines(lines)
 
 
-class TCPWriter(OutputWriter):
+class HTTPWriter(OutputWriter):
 
     def __init__(self, out_f: str, host: str, port: int):
         super().__init__(out_f, host, port)
@@ -131,7 +132,6 @@ class TCPWriter(OutputWriter):
         Write the output as a TCP socket client
         '''
 
-        import datetime
         lines = ["[" + str(datetime.datetime.now()) + "]" + "\n"]
         for sat_obj in sat_objs:
             if sat_obj.is_visible:
@@ -141,6 +141,95 @@ class TCPWriter(OutputWriter):
 
         msg = "".join(lines).encode("utf-8")
         self.msg = msg
+
+
+class TCPWriter(OutputWriter):
+
+    def __init__(self, out_f: str, host: str, port: int):
+        super().__init__(out_f, host, port)
+        self.msg = b'' #Empty byte object
+        self._server_socket = None
+        self._client_socket = None
+        self._this_thread = None
+        self.running = True
+        self._initialize_sockets()
+
+    def __del__(self):
+        '''
+        Destructor terminates any ongoing server and threads
+        '''
+        self.stop_server()
+
+
+    def listen_loop(self):
+        while self.running:
+            if self._server_socket:
+                conn, addr = self._server_socket.accept()
+                try:
+                    msg_recv = conn.recv(1024)
+                    ack_msg = b"Data received from client:" + msg_recv
+                    conn.sendall(ack_msg)
+                except Exception as e:
+                    print(f"Error occurred: {e}")
+                    break
+
+    def sender_loop(self):
+
+        self._client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._client_socket.connect((self.host, self.port))
+        if self.msg:
+            try:
+                self._client_socket.sendall(self.msg)
+                while True:
+                    data = self._client_socket.recv(1024)
+                    if data:
+                        print(data)
+                        break
+                    else:
+                        print('no data received')
+            except Exception as e:
+                print(f"Error occurred: {e}")
+
+    def _initialize_sockets(self):
+        '''
+        Initiates the socket and binds it to listen to the host port address. It also starts a thread to handle the incoming connections and send the most recent message.
+        '''
+        # SERVER LISTENING
+        self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self._server_socket.bind((self.host, self.port))
+        self._server_socket.listen(1)
+
+        self._server_thread = threading.Thread(target=self.listen_loop, daemon=True)
+        self._server_thread.start()
+
+    def stop_server(self):
+        '''
+        Stops a running socket and the associated threads
+        '''
+        self.running = False
+        if self._server_socket:
+            self._server_socket.close()
+        if self._client_socket:
+            self._client_socket.close()
+        time.sleep(2)
+        self._server_thread.join()
+
+    def write(self, sat_objs: list) -> None:
+        '''
+        Changing the message for the TCP client to send
+        '''
+
+        lines = ["[" + str(datetime.datetime.now()) + "]" + "\n"]
+        for sat_obj in sat_objs:
+            if sat_obj.is_visible:
+                lines.append(f"{sat_obj.id}: {sat_obj.color}\n")
+            else:
+                lines.append(f"{sat_obj.id}: NOT PASSING\n")
+
+        msg = "".join(lines).encode("utf-8")
+        self.msg = msg
+        self.sender_loop()
 
 def author(out_type: int, out_f: str, host: str, port: int) -> OutputWriter:
     '''
