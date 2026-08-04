@@ -1,0 +1,46 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: main
+  pull_request:
+    branches: main
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      docker:
+        image: docker:24.4-dind
+        options: --privileged
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install mypy
+
+      - name: Run pytest
+        run: |
+          pytest -q
+
+      - name: Build Docker image
+        run: |
+          docker build -t satellite-pass-app:test .
+
+      - name: Run Docker container smoke test
+        run: |
+          docker run --rm satellite-pass-app:test pytest -q
