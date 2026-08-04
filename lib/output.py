@@ -176,6 +176,7 @@ class TCPWriter(OutputWriter):
     def sender_loop(self):
 
         self._client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self._client_socket.connect((self.host, self.port))
         if self.msg:
             try:
@@ -241,6 +242,8 @@ def author(out_type: int, out_f: str, host: str, port: int) -> OutputWriter:
         writer = FileWriter(out_f, host, port)
     elif out_type==3:
         writer = TCPWriter(out_f, host, port)
+    elif out_type==4:
+        writer = HTTPWriter(out_f, host, port)
     else:
         raise ValueError("Invalid output type specified.")
 

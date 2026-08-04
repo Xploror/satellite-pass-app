@@ -30,4 +30,4 @@ Lab:
   Longitude: -122.4194
   min_elevation: 5
 
-Output: 3  # 1-> STDOUT | 2-> FILE | 3-> TCP connection
+Output: 3  # 1-> STDOUT | 2-> FILE | 3-> TCP connection | 4 -> HTTPServer

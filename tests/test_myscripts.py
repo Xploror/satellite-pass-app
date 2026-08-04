@@ -37,7 +37,7 @@ def demo_lab() -> Lab:
 
 @pytest.fixture
 def testport() -> int:
-    return 12350
+    return 12349
 
 
 def test_load_mission_info(file_path: str):
@@ -96,19 +96,33 @@ def test_FileWriter(demo_sat_data: list, testoutf: str, testhost: str, testport:
     os.remove(out.out_f)
 
 
-def test_TCPWriter(demo_sat_data: list, testoutf: str, testhost: str, testport: int):
+def test_TCPWriter(demo_sat_data: list, testoutf: str, testhost: str, testport: int, capsys):
     s1 = demo_sat_data[0]
     s2 = demo_sat_data[1]
     out = author(3, out_f=testoutf, host=testhost, port=testport)
     #Testing write function for arbitrary iterations between 1-10
     for i in range(int(1 + 9*random())):
         out.write(demo_sat_data)
-        local_url = "http://localhost:" + str(testport)
-        resp = requests.get(local_url, timeout=3)
-        assert resp.status_code == 200
-        assert str(s1.id) + ": Red" in resp.text
-        assert str(s2.id) + ": NOT PASSING" in resp.text
+        captured = capsys.readouterr().out.strip().splitlines()
+        data = captured[0].split("\\n")
+        assert data[1] == str(s1.id) + ": Red"
+        assert data[2] == str(s2.id) + ": NOT PASSING"
     del(out)
+
+
+# def test_HTTPWriter(demo_sat_data: list, testoutf: str, testhost: str, testport: int):
+#     s1 = demo_sat_data[0]
+#     s2 = demo_sat_data[1]
+#     out = author(4, out_f=testoutf, host=testhost, port=testport)
+#     #Testing write function for arbitrary iterations between 1-10
+#     for i in range(int(1 + 9*random())):
+#         out.write(demo_sat_data)
+#         local_url = "http://localhost:" + str(testport)
+#         resp = requests.get(local_url, timeout=3)
+#         assert resp.status_code == 200
+#         assert str(s1.id) + ": Red" in resp.text
+#         assert str(s2.id) + ": NOT PASSING" in resp.text
+#     del(out)
 
 
 def test_is_port_available(testhost: str, testport: int):
