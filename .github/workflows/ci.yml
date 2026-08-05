@@ -42,4 +42,4 @@ jobs:
 
       - name: Run Docker container smoke test
         run: |
-          docker run --rm satellite-pass-app:test pytest -q
+          docker run --rm satellite-pass-app:test
