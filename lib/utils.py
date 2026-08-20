@@ -3,7 +3,7 @@ import time
 import sys
 import os
 
-API_KEY = os.getenv("N2YO_APIKEY", "TBAH4F-ECZHJF-QRNFGX-5T0R")
+API_KEY = os.environ["N2YO_APIKEY"]
 
 def fetch_API1(sat_objs: list, lab_obj, limit: int = 1, visible_only: bool = False) -> None:
     '''

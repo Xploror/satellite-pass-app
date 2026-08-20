@@ -104,12 +104,12 @@ docker build -t satellite-pass-app .
 
 3. Run necessary functional tests on the project (recommended for first use):
 ```
-docker run --rm -it satellite-pass-app pytest -q
+docker run -e N2YO_APIKEY=[your-N2YO-api] -e OPENCAGE_APIKEY=[your-opencage-api] --rm -it satellite-pass-app pytest -q
 ```
 
 4. Run the container using the built docker image over default settings as:
 ```
-docker run --rm -it satellite-pass-app
+docker run -e N2YO_APIKEY=[your-N2YO-api] -e OPENCAGE_APIKEY=[your-opencage-api] --rm -it satellite-pass-app
 ```
 
 By default the container refers to the environment variables APP_HOST=0.0.0.0 and APP_PORT=80 as default container port address that is served. Docker's port mapping can be used to externally channel data outside the container since the port 80 is exposed.

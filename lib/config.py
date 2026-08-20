@@ -1,8 +1,9 @@
+import os
 import yaml
 import sys
 from lib.systems import *
 
-OPENCAGE_API = "a351b52e9f5047b4942eefcfe3a09ff8"
+OPENCAGE_API = os.environ["OPENCAGE_APIKEY"]
 
 def load_config(file_path: str) -> dict:
     '''
