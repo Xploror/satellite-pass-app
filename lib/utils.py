@@ -57,16 +57,15 @@ def fetch_API2(sat_objs : list, lab_obj, sec_ahead: int = 1) -> None:
 
         url = parent_url + "positions" + "/" + str(sat_id) + "/" + str(lab_lat) + "/" + str(lab_lng) + "/" + str(lab_alt) + "/" + str(sec_ahead) + "/&apiKey=" + API_KEY
 
-        count = 0 
         for attempt in range(5):
-            response = requests.get(url, timeout=3)
-
-            count = count + 1
-            if response.status_code == 200:
+            try:
+                response = requests.get(url, timeout=3)
+                response.raise_for_status()
                 data = response.json()
                 break
-            elif attempt == 4:
-                print("Runtime exceed limit", file=sys.stderr)
+            except:
+                if attempt == 4:
+                    print("Runtime exceed limit", file=sys.stderr)
 
         try:
             first_pass = data["positions"][0]

@@ -23,7 +23,7 @@ def load_config(file_path: str) -> dict:
             configs['Lab']['Longitude'] = loc[1]
     except FileNotFoundError:
         print("\033[31mConfiguration file not found or missing necessary data. Please check the file path or fill necessary data and try again.\033[0m", file=sys.stderr)
-        configs = {} #Empty dictionary
+        sys.exit(1)
 
     # print(f"Loaded configuration from {file_path}")
     return configs
