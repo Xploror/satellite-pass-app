@@ -63,9 +63,9 @@ def fetch_API2(sat_objs : list, lab_obj, sec_ahead: int = 1) -> None:
                 response.raise_for_status()
                 data = response.json()
                 break
-            except:
+            except requests.exceptions.RequestException as e:
                 if attempt == 4:
-                    print("Runtime exceed limit", file=sys.stderr)
+                    raise ConnectionError(f"{url} unreachable!") from e
 
         try:
             first_pass = data["positions"][0]
