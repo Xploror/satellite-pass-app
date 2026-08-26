@@ -28,15 +28,16 @@ def fetch_API1(sat_objs: list, lab_obj, limit: int = 1, visible_only: bool = Fal
                                             "visible_only":visible_only},
                                             timeout=3)
 
-            if response.status_code == 200:
-                if response.json() != []:
-                    data = response.json()[0]
-                    timestamp_interval = [float(data['rise']['utc_timestamp']), float(data['set']['utc_timestamp'])]
-                else:
-                    timestamp_interval = [0, 0] #For given lab position, satellite is never visible even in future
+            try:    
+                response.status_code = 200
+                response.raise_for_status()
+                data = response.json()[0]
+                timestamp_interval = [float(data['rise']['utc_timestamp']), float(data['set']['utc_timestamp'])]
                 break
-            elif attempt == 4:
-                print("Runtime exceed limit", file=sys.stderr)
+            except requests.exceptions.RequestException as e:
+                if attempt == 4:
+                    raise ConnectionError(f"{url} unreachable!") from e
+
 
         sat_obj.is_visible = time.time() > timestamp_interval[0] and time.time() < timestamp_interval[1]
 
@@ -69,7 +70,7 @@ def fetch_API2(sat_objs : list, lab_obj, sec_ahead: int = 1) -> None:
 
         try:
             first_pass = data["positions"][0]
-            sat_obj.is_visible = first_pass['elevation'] > min_elev and first_pass['elevation'] < 180 - min_elev
+            sat_obj.is_visible = first_pass['elevation'] > min_elev
         except KeyError:
             raise KeyError("Exceeded transaction limit for the given API key. Try using a new one!")
 

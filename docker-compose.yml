@@ -18,7 +18,7 @@ services:
     environment:
       APP_HOST: 0.0.0.0
       APP_PORT: 60
-      CONFIG_FILENAME: 
+      CONFIG_FILENAME: config_files/conf_default
     ports:
       - "12345:60"
       - "5000:60"
