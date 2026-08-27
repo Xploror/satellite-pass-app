@@ -1,7 +1,7 @@
 import os
 import yaml
 import sys
-from lib.systems import *
+from lib.systems import MySatellites, Lab
 
 OPENCAGE_API = os.environ["OPENCAGE_APIKEY"]
 

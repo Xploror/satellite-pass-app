@@ -1,14 +1,12 @@
-from lib.utils import *
+from dataclasses import dataclass
 
+
+@dataclass
 class MySatellites:
-
-    def __init__(self, name : str, id : int, color : str):
-        self.name = name
-        self.id = id
-        self.color = color
-
-        self.is_visible = False
-
+    name: str
+    norad_id: int
+    color: str
+    is_visible: bool = False
 
 class Lab:
 

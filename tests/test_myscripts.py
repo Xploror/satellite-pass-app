@@ -1,12 +1,13 @@
 import pytest
 import os
-import requests
 from random import random
 
 from lib.config import load_mission_info
-from lib.output import FileWriter, stdoutWriter, author
+from lib.output import author
 from lib.systems import MySatellites, Lab
-from lib.utils import fetch_API1, fetch_API2, is_port_available
+from lib.utils import is_port_available
+from lib.providers.n2yo import fetch_API as n2yo_fetch
+from lib.providers.terrestre import fetch_API as terrestre_fetch
 
 @pytest.fixture
 def file_path() -> str:
@@ -45,7 +46,7 @@ def test_load_mission_info(file_path: str):
     sats, lab, out_type = load_mission_info(file_path)
 
     assert len(sats) == 8
-    assert sats[0].id == 25544
+    assert sats[0].norad_id == 25544
     assert sats[0].color == "Red"
     assert lab.lat == 37.7749
     assert lab.lng == -122.4194
@@ -58,13 +59,13 @@ def test_fetch_APIs(demo_sat_data: list, demo_lab: Lab):
     for demo_sat in demo_sat_data:
         demo_sat.is_visible = None
 
-    fetch_API1(demo_sat_data, demo_lab)
+    terrestre_fetch(demo_sat_data, demo_lab)
     assert all([s.is_visible is not None for s in demo_sat_data])
 
     for demo_sat in demo_sat_data:
         demo_sat.is_visible = None
 
-    fetch_API2(demo_sat_data, demo_lab)
+    n2yo_fetch(demo_sat_data, demo_lab)
     assert all([s.is_visible is not None for s in demo_sat_data])
 
 
@@ -76,7 +77,7 @@ def test_stdoutWriter(demo_sat_data: list, testoutf: str, testhost: str, testpor
     out.write(demo_sat_data)
 
     captured = capsys.readouterr().out.strip().splitlines()
-    assert captured == [str(s1.id)+": Red", str(s2.id)+": NOT PASSING"]
+    assert captured == [str(s1.norad_id)+": Red", str(s2.norad_id)+": NOT PASSING"]
 
 
 def test_FileWriter(demo_sat_data: list, testoutf: str, testhost: str, testport: int):
@@ -90,7 +91,7 @@ def test_FileWriter(demo_sat_data: list, testoutf: str, testhost: str, testport:
     # content check
     with open(out.out_f, "r") as f:
         lines = [line.strip() for line in f]
-    assert str(s1.id)+": Red" in lines and str(s2.id)+": NOT PASSING" in lines
+    assert str(s1.norad_id)+": Red" in lines and str(s2.norad_id)+": NOT PASSING" in lines
 
     # Remove demo output file generated
     os.remove(out.out_f)
@@ -105,8 +106,8 @@ def test_TCPWriter(demo_sat_data: list, testoutf: str, testhost: str, testport: 
         out.write(demo_sat_data)
         captured = capsys.readouterr().out.strip().splitlines()
         data = captured[0].split("\\n")
-        assert data[1] == str(s1.id) + ": Red"
-        assert data[2] == str(s2.id) + ": NOT PASSING"
+        assert data[1] == str(s1.norad_id) + ": Red"
+        assert data[2] == str(s2.norad_id) + ": NOT PASSING"
     del(out)
 
 
@@ -120,8 +121,8 @@ def test_TCPWriter(demo_sat_data: list, testoutf: str, testhost: str, testport: 
 #         local_url = "http://localhost:" + str(testport)
 #         resp = requests.get(local_url, timeout=3)
 #         assert resp.status_code == 200
-#         assert str(s1.id) + ": Red" in resp.text
-#         assert str(s2.id) + ": NOT PASSING" in resp.text
+#         assert str(s1.norad_id) + ": Red" in resp.text
+#         assert str(s2.norad_id) + ": NOT PASSING" in resp.text
 #     del(out)
 
 

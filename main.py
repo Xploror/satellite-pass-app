@@ -1,6 +1,7 @@
 from lib.config import load_mission_info
-from lib.utils import *
-from lib.output import *
+from lib.utils import is_port_available
+from lib.providers.n2yo import fetch_API
+from lib.output import author
 import time
 import os
 import sys
@@ -30,7 +31,7 @@ def main():
     while True:
 
         # USING THE API TO UPDATE SAT OBJECTS GIVEN A DESIRED LOCATION
-        fetch_API2(sats, lab)
+        fetch_API(sats, lab)
 
         # WRITING OUTPUT
         writer.write(sats)

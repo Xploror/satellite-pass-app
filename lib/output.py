@@ -1,8 +1,7 @@
 from typing import Any
 
-from lib.systems import *
 import os
-import sys
+import time
 import datetime
 import socket
 from pathlib import Path
@@ -31,9 +30,9 @@ class stdoutWriter(OutputWriter):
 
         for sat_obj in sat_objs:
             if sat_obj.is_visible:
-                print(str(sat_obj.id) + ": " + sat_obj.color)
+                print(str(sat_obj.norad_id) + ": " + sat_obj.color)
             else:
-                print(str(sat_obj.id) + ": NOT PASSING")
+                print(str(sat_obj.norad_id) + ": NOT PASSING")
 
 
 class FileWriter(OutputWriter):
@@ -61,9 +60,9 @@ class FileWriter(OutputWriter):
         lines = ["[" + now.strftime("%Y-%m-%d %H:%M:%S") + "]\n"]
         for sat_obj in sat_objs:
             if sat_obj.is_visible:
-                lines.append(str(sat_obj.id) + ": " + sat_obj.color + "\n")
+                lines.append(str(sat_obj.norad_id) + ": " + sat_obj.color + "\n")
             else:
-                lines.append(str(sat_obj.id) + ": NOT PASSING\n")
+                lines.append(str(sat_obj.norad_id) + ": NOT PASSING\n")
 
         with open(self.out_f, "a+") as f:
             f.writelines(lines)
@@ -135,9 +134,9 @@ class HTTPWriter(OutputWriter):
         lines = ["[" + str(datetime.datetime.now()) + "]" + "\n"]
         for sat_obj in sat_objs:
             if sat_obj.is_visible:
-                lines.append(f"{sat_obj.id}: {sat_obj.color}\n")
+                lines.append(f"{sat_obj.norad_id}: {sat_obj.color}\n")
             else:
-                lines.append(f"{sat_obj.id}: NOT PASSING\n")
+                lines.append(f"{sat_obj.norad_id}: NOT PASSING\n")
 
         msg = "".join(lines).encode("utf-8")
         self.msg = msg
@@ -224,9 +223,9 @@ class TCPWriter(OutputWriter):
         lines = ["[" + str(datetime.datetime.now()) + "]" + "\n"]
         for sat_obj in sat_objs:
             if sat_obj.is_visible:
-                lines.append(f"{sat_obj.id}: {sat_obj.color}\n")
+                lines.append(f"{sat_obj.norad_id}: {sat_obj.color}\n")
             else:
-                lines.append(f"{sat_obj.id}: NOT PASSING\n")
+                lines.append(f"{sat_obj.norad_id}: NOT PASSING\n")
 
         msg = "".join(lines).encode("utf-8")
         self.msg = msg

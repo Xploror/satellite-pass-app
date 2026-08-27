@@ -1,9 +1,12 @@
 import requests
 import time
-import sys
 import os
 
 API_KEY = os.environ["N2YO_APIKEY"]
+
+class QuotaExceededError(RuntimeError):
+    pass
+
 
 def fetch_API1(sat_objs: list, lab_obj, limit: int = 1, visible_only: bool = False) -> None:
     '''
@@ -16,7 +19,7 @@ def fetch_API1(sat_objs: list, lab_obj, limit: int = 1, visible_only: bool = Fal
     parent_url = "https://sat.terrestre.ar/passes/"
 
     for sat_obj in sat_objs:
-        sat_id = sat_obj.id
+        sat_id = sat_obj.norad_id
 
         url = parent_url + str(sat_id)
 
@@ -54,7 +57,7 @@ def fetch_API2(sat_objs : list, lab_obj, sec_ahead: int = 1) -> None:
     parent_url = "https://api.n2yo.com/rest/v1/satellite/"
 
     for sat_obj in sat_objs:
-        sat_id = sat_obj.id
+        sat_id = sat_obj.norad_id
 
         url = parent_url + "positions" + "/" + str(sat_id) + "/" + str(lab_lat) + "/" + str(lab_lng) + "/" + str(lab_alt) + "/" + str(sec_ahead) + "/&apiKey=" + API_KEY
 
@@ -71,8 +74,8 @@ def fetch_API2(sat_objs : list, lab_obj, sec_ahead: int = 1) -> None:
         try:
             first_pass = data["positions"][0]
             sat_obj.is_visible = first_pass['elevation'] > min_elev
-        except KeyError:
-            raise KeyError("Exceeded transaction limit for the given API key. Try using a new one!")
+        except KeyError as e:
+            raise QuotaExceededError("Wrong API key or exceeded transaction limit for the given API key. Try using a new one!") from e
 
 
 def is_port_available(host: str, port: int):
