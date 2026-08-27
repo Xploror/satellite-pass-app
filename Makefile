@@ -20,8 +20,8 @@ docker-build:
 	docker build -t satellite-pass-app .
 
 docker-test:
-    docker build -t satellite-pass-app .
-    docker run --rm -it satellite-pass-app pytest -q
+	docker build -t satellite-pass-app .
+	docker run --rm -it satellite-pass-app pytest -q
 
 docker-run:
 	docker run --rm -it satellite-pass-app

@@ -1,6 +1,7 @@
 config_files/*
 lib/old/*
 lib/__pycache__/*
+lib/providers/__pycache__/*
 tests/__pycache__/*
 .pytest_cache/*
 .venv/*
