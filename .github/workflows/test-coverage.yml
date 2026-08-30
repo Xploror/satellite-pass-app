@@ -10,13 +10,12 @@ on:
     pull_request:
         branches: [main]
 
-permissions:
-    contents: read
-    code-quality: write
-
 jobs:
     test:
         runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            code-quality: write
         steps:
             - name: Checkout Code
               uses: actions/checkout@v6
@@ -43,4 +42,3 @@ jobs:
                 file: coverage.xml
                 language: Python
                 label: code-coverage/pytest
-                fail-on-error: false
