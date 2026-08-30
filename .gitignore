@@ -5,3 +5,4 @@ lib/providers/__pycache__/*
 tests/__pycache__/*
 .pytest_cache/*
 .venv/*
+.coverage

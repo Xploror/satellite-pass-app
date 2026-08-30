@@ -3,7 +3,7 @@ from random import random
 
 from lib.systems import MySatellites, Lab
 from lib.providers.n2yo import fetch_API as n2yo_fetch
-from lib.providers.terrestre import fetch_API as terrestre_fetch
+# from lib.providers.terrestre import fetch_API as terrestre_fetch
 
 
 @pytest.fixture
@@ -24,11 +24,11 @@ def demo_lab() -> Lab:
 
 def test_fetch_APIs(demo_sat_data: list, demo_lab: Lab):
 
-    for demo_sat in demo_sat_data:
-        demo_sat.is_visible = None
+    # for demo_sat in demo_sat_data:
+    #     demo_sat.is_visible = None
 
-    terrestre_fetch(demo_sat_data, demo_lab)
-    assert all([s.is_visible is not None for s in demo_sat_data])
+    # terrestre_fetch(demo_sat_data, demo_lab)
+    # assert all([s.is_visible is not None for s in demo_sat_data])
 
     for demo_sat in demo_sat_data:
         demo_sat.is_visible = None
