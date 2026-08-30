@@ -1,5 +1,9 @@
 name: Code Coverage
 
+env:
+  N2YO_APIKEY: ${{ secrets.N2YO_APIKEY }}
+  OPENCAGE_APIKEY: ${{ secrets.OPENCAGE_APIKEY }}
+
 on:
     push:
         branches: [main]
