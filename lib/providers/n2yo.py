@@ -5,6 +5,9 @@ import sys
 API_KEY = os.environ["N2YO_APIKEY"]
 
 class QuotaExceededError(RuntimeError):
+    '''
+    Class to define whenever the API quota is exceeded
+    '''
     pass
 
 
