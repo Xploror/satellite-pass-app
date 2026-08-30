@@ -160,6 +160,14 @@ class TCPWriter(OutputWriter):
         self.stop_server()
 
 
+    def get_server(self):
+        return self._server_socket
+
+
+    def get_client(self):
+            return self._client_socket
+
+
     def listen_loop(self):
         while self.running:
             if self._server_socket:

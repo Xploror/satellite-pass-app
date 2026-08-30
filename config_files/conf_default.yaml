@@ -14,8 +14,8 @@ Assets:
 
 Lab:
   City: Blacksburg
-  Latitude: #-33.4489
-  Longitude: #-70.6693
+  Latitude: -33.4489
+  Longitude: -70.6693
   min_elevation: 30
 
 Output: 3  # 1-> STDOUT | 2-> FILE | 3-> TCP connection | 4 -> HTTPServer

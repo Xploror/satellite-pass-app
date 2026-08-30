@@ -17,7 +17,7 @@ def load_config(file_path: str) -> dict:
         with open(file_path, 'r') as file:
             configs = yaml.safe_load(file)
         # Checks if City attribute is non-empty to run opencage API and override Lat, Lng from config file
-        if configs['Lab']['City'] and (configs['Lab']['Latitude'] is None or configs['Lab']['Longitude'] is None):
+        if configs['Lab']['City']:
             loc = opencage_geoloc(configs['Lab']['City'])
             configs['Lab']['Latitude'] = loc[0]
             configs['Lab']['Longitude'] = loc[1]
