@@ -2,6 +2,7 @@ import os
 import yaml
 import sys
 from lib.systems import MySatellites, Lab
+from opencage.geocoder import OpenCageGeocode # type: ignore
 
 OPENCAGE_API = os.environ["OPENCAGE_APIKEY"]
 
@@ -44,7 +45,6 @@ def opencage_geoloc(city: str) -> list:
     '''
     Takes the city name and returns the latitude and longitude using the OpenCage Geocoding API.
     '''
-    from opencage.geocoder import OpenCageGeocode
 
     coder = OpenCageGeocode(OPENCAGE_API)
     results = coder.geocode(city)

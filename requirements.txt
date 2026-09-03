@@ -1,6 +1,5 @@
 PyYAML>=6.0.2
 requests>=2.32.0
-pytest>=8.3.0
 opencage>=3.4.0
 pytest>=9.1.0
 pytest-cov>=7.1.0

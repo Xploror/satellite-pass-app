@@ -243,6 +243,7 @@ def author(out_type: int, out_f: str, host: str, port: int) -> OutputWriter:
     '''
     Writes output based on the specified output type.
     '''
+    writer: OutputWriter
     if out_type==1:
         writer = stdoutWriter(out_f, host, port)
     elif out_type==2:
