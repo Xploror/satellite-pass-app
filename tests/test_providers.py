@@ -14,12 +14,13 @@ def demo_sat_data() -> list:
     s2.is_visible = False
     return [s1, s2]
 
+
 @pytest.fixture
 def demo_lab() -> Lab:
-    lat = -90 + 180*random()
-    lng = -180 + 360*random()
-    min_elev = 90*random()
-    return Lab([lat,lng], {'min_elev':min_elev})
+    lat = -90 + 180 * random()
+    lng = -180 + 360 * random()
+    min_elev = 90 * random()
+    return Lab([lat, lng], {"min_elev": min_elev})
 
 
 def test_fetch_APIs(demo_sat_data: list, demo_lab: Lab):

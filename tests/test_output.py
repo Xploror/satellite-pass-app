@@ -32,10 +32,10 @@ def demo_sat_data() -> list:
 
 @pytest.fixture
 def demo_lab() -> Lab:
-    lat = -90 + 180*random()
-    lng = -180 + 360*random()
-    min_elev = 90*random()
-    return Lab([lat,lng], {'min_elev':min_elev})
+    lat = -90 + 180 * random()
+    lng = -180 + 360 * random()
+    min_elev = 90 * random()
+    return Lab([lat, lng], {"min_elev": min_elev})
 
 
 def test_stdoutWriter(demo_sat_data: list, testoutf: str, testhost: str, testport: int, capsys):
@@ -45,7 +45,7 @@ def test_stdoutWriter(demo_sat_data: list, testoutf: str, testhost: str, testpor
     out.write(demo_sat_data)
 
     captured = capsys.readouterr().out.strip().splitlines()
-    assert captured == [str(s1.norad_id)+": Red", str(s2.norad_id)+": NOT PASSING"]
+    assert captured == [str(s1.norad_id) + ": Red", str(s2.norad_id) + ": NOT PASSING"]
 
 
 def test_FileWriter(demo_sat_data: list, testoutf: str, testhost: str, testport: int):
@@ -59,7 +59,7 @@ def test_FileWriter(demo_sat_data: list, testoutf: str, testhost: str, testport:
     # content check
     with open(out.out_f, "r") as f:
         lines = [line.strip() for line in f]
-    assert str(s1.norad_id)+": Red" in lines and str(s2.norad_id)+": NOT PASSING" in lines
+    assert str(s1.norad_id) + ": Red" in lines and str(s2.norad_id) + ": NOT PASSING" in lines
 
     # Remove demo output file generated
     os.remove(out.out_f)
@@ -69,14 +69,14 @@ def test_TCPWriter(demo_sat_data: list, testoutf: str, testhost: str, testport: 
     s1 = demo_sat_data[0]
     s2 = demo_sat_data[1]
     out = author(3, out_f=testoutf, host=testhost, port=testport)
-    #Testing write function for arbitrary iterations between 1-10
-    for i in range(int(1 + 9*random())):
+    # Testing write function for arbitrary iterations between 1-10
+    for i in range(int(1 + 9 * random())):
         out.write(demo_sat_data)
         captured = capsys.readouterr().out.strip().splitlines()
         data = captured[0].split("\\n")
         assert data[1] == str(s1.norad_id) + ": Red"
         assert data[2] == str(s2.norad_id) + ": NOT PASSING"
-    del(out)
+    del out
 
 
 # def test_HTTPWriter(demo_sat_data: list, testoutf: str, testhost: str, testport: int):

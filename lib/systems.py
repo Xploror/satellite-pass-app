@@ -8,9 +8,9 @@ class MySatellites:
     color: str
     is_visible: bool = False
 
-class Lab:
 
-    def __init__(self, location : list, constraints : dict):
+class Lab:
+    def __init__(self, location: list, constraints: dict):
         self.lat = location[0]
         self.lng = location[1]
-        self.min_elev = constraints['min_elev'] #deg
+        self.min_elev = constraints["min_elev"]  # deg

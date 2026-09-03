@@ -6,13 +6,18 @@ from lib.config import load_mission_info, opencage_geoloc
 def file_paths() -> list:
     return ["config_files/" + "conf_test1.yaml", "config_files/" + "conf_default.yaml"]
 
+
 @pytest.fixture
 def demo_cities() -> dict:
-    return {"London":[51.5099,-0.1181], "Istanbul":[41.0138, 28.9497], "Beijing":[39.9075, 116.3972]}
+    return {
+        "London": [51.5099, -0.1181],
+        "Istanbul": [41.0138, 28.9497],
+        "Beijing": [39.9075, 116.3972],
+    }
 
 
 def test_load_mission_info(file_paths: list):
-    
+
     for itr, file_path in enumerate(file_paths):
         sats, lab, out_type = load_mission_info(file_path)
 
@@ -33,7 +38,6 @@ def test_load_mission_info(file_paths: list):
             assert lab.lng == opencage_loc[1]
             assert lab.min_elev == 30
             assert out_type == 3
-
 
 
 def test_opencage_geoloc(demo_cities: dict):
