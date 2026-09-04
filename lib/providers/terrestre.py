@@ -1,5 +1,6 @@
-import requests
 import time
+
+import requests
 
 
 def fetch_API(sat_objs: list, lab_obj, limit: int = 1, visible_only: bool = False) -> None:

@@ -1,6 +1,6 @@
-import requests
 import os
-import sys
+
+import requests
 
 API_KEY = os.environ["N2YO_APIKEY"]
 
@@ -54,7 +54,7 @@ def fetch_API(sat_objs: list, lab_obj, sec_ahead: int = 1) -> None:
                     sat_obj.is_visible = first_pass["elevation"] > min_elev
                 except KeyError as e:
                     raise QuotaExceededError(
-                        "Wrong API key or exceeded transaction limit for the given API key. Try using a new one!"
+                        "Wrong API key or exceeded API transaction limit. Try using a new one!"
                     ) from e
                 break
             except requests.exceptions.RequestException as e:

@@ -1,9 +1,10 @@
-import pytest
 import os
 from random import random
 
+import pytest
+
 from lib.output import author
-from lib.systems import MySatellites, Lab
+from lib.systems import Lab, MySatellites
 
 
 @pytest.fixture

@@ -1,13 +1,6 @@
 import pytest
-import os
-from random import random
 
-from lib.config import load_mission_info
-from lib.output import author
-from lib.systems import MySatellites, Lab
 from lib.utils import is_port_available
-from lib.providers.n2yo import fetch_API as n2yo_fetch
-from lib.providers.terrestre import fetch_API as terrestre_fetch
 
 
 @pytest.fixture
@@ -25,7 +18,7 @@ def test_is_port_available(testhost: str, testport: int):
     # Free port
     new_testport = testport + 1  # Using a different port
     boolval = is_port_available(testhost, new_testport)
-    assert boolval == True
+    assert boolval == 1
 
     # Busy port
     import socket
@@ -35,6 +28,6 @@ def test_is_port_available(testhost: str, testport: int):
     skt.listen()
 
     boolval = is_port_available(testhost, new_testport)
-    assert boolval == False
+    assert boolval == 0
 
     skt.close()

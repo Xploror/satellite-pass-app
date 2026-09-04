@@ -17,5 +17,5 @@ def is_port_available(host: str, port: int):
         try:
             skt.bind((host, port))
             return True
-        except:
+        except Exception:
             return False

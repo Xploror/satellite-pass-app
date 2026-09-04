@@ -16,7 +16,7 @@ PORT = int(os.getenv("APP_PORT", "12346"))
 
 
 def main():
-    # INPUT DESIRED CONFIG FILE FROM ARGV ($out_type PRIORITY: 1. CLI  2. YAML, $port PRIORITY: 1. CLI  2. ENV_VAR)
+    # INPUT DESIRED CONFIG FILE FROM ARGV 
     conf_file_path = (
         sys.argv[1] if len(sys.argv) > 1 else None
     ) or CONF_PATH.strip()  # conf_file path PRIORITY: 1. CLI  2. ENV_VAR

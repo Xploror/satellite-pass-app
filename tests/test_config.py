@@ -1,4 +1,5 @@
 import pytest
+
 from lib.config import load_mission_info, opencage_geoloc
 
 

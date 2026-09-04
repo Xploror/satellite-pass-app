@@ -1,12 +1,11 @@
-from typing import Any
-
-import os
-import time
 import datetime
+import os
 import socket
-from pathlib import Path
-from http.server import HTTPServer, BaseHTTPRequestHandler
 import threading
+import time
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
+from typing import Any
 
 
 class OutputWriter:
@@ -105,7 +104,7 @@ class HTTPWriter(OutputWriter):
                 # return super().log_message(format, *args)
                 return
 
-        # Make the HTTPServer object using the Handler for writing on the host and run the service in a thread as background daemon
+        # Make the HTTPServer object to run the service on a thread as background daemon
         try:
             self._this_server = HTTPServer((self.host, self.port), Handler)
             self._this_thread = threading.Thread(
@@ -201,7 +200,8 @@ class TCPWriter(OutputWriter):
 
     def _initialize_sockets(self):
         """
-        Initiates the socket and binds it to listen to the host port address. It also starts a thread to handle the incoming connections and send the most recent message.
+        Initiates the socket and binds it to listen to the host port address. 
+        It also starts a thread to handle the incoming connections and send the most recent message.
         """
         # SERVER LISTENING
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

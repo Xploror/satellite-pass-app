@@ -1,8 +1,10 @@
 import os
-import yaml
 import sys
-from lib.systems import MySatellites, Lab
+
+import yaml
 from opencage.geocoder import OpenCageGeocode  # type: ignore
+
+from lib.systems import Lab, MySatellites
 
 OPENCAGE_API = os.environ["OPENCAGE_APIKEY"]
 
@@ -18,14 +20,14 @@ def load_config(file_path: str) -> dict:
     try:
         with open(file_path, "r") as file:
             configs = yaml.safe_load(file)
-        # Checks if City attribute is non-empty to run opencage API and override Lat, Lng from config file
+        # Checks if City attribute is non-empty to override Lat, Lng from config file
         if configs["Lab"]["City"]:
             loc = opencage_geoloc(configs["Lab"]["City"])
             configs["Lab"]["Latitude"] = loc[0]
             configs["Lab"]["Longitude"] = loc[1]
     except FileNotFoundError:
         print(
-            "\033[31mConfiguration file not found or missing necessary data. Please check the file path or fill necessary data and try again.\033[0m",
+            "\033[31mConfiguration file not found. Check path and try again.\033[0m",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -57,14 +59,14 @@ def load_mission_info(file_path: str) -> tuple:
 
 def opencage_geoloc(city: str) -> list:
     """
-    Takes the city name and returns the latitude and longitude using the OpenCage Geocoding API.
+    Takes the city name and returns lat-lon using the OpenCage Geocoding API.
     """
 
     coder = OpenCageGeocode(OPENCAGE_API)
     results = coder.geocode(city)
     if results == []:
         print(
-            "\033[31mCould not find the desired city in the database. Please check the spelling or try latitude and longitude values!\033[0m",
+            "\033[31mCould not find the desired city. Please check the spelling!\033[0m",
             file=sys.stderr,
         )
         sys.exit(0)

@@ -1,8 +1,10 @@
-import pytest
 from random import random
 
-from lib.systems import MySatellites, Lab
+import pytest
+
 from lib.providers.n2yo import fetch_API as n2yo_fetch
+from lib.systems import Lab, MySatellites
+
 # from lib.providers.terrestre import fetch_API as terrestre_fetch
 
 
