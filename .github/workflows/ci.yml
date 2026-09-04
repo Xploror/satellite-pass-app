@@ -33,18 +33,32 @@ jobs:
         run: |
           sudo apt-get update
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install mypy
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Run ruff lint
+        run: |
+          ruff check .
+
+      - name: Run ruff format check
+        run: |
+          ruff format --check .
+
+      - name: Run mypy
+        run: |
+          mypy lib
 
       - name: Run pytest
         run: |
           pytest -q
 
-      - name: Build Docker image
+      - name: Build production image
         run: |
           docker build --target production -t satellite-pass-app:test .
 
-      - name: Run Docker container smoke test
+      - name: Run production container smoke test
         run: |
-          docker run -d satellite-pass-app:test
-          docker stop $(docker ps -q)
+          id=$(docker run -d satellite-pass-app:test)
+          sleep 3
+          docker logs "$id"
+          docker inspect -f "{{.State.Running}}" "$id"
+          docker stop "$id"

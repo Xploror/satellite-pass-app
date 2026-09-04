@@ -200,7 +200,7 @@ class TCPWriter(OutputWriter):
 
     def _initialize_sockets(self):
         """
-        Initiates the socket and binds it to listen to the host port address. 
+        Initiates the socket and binds it to listen to the host port address.
         It also starts a thread to handle the incoming connections and send the most recent message.
         """
         # SERVER LISTENING

@@ -4,14 +4,20 @@ VENV ?= .venv
 PYTHON_VENV := $(VENV)/bin/python
 ARGS ?=
 
-.PHONY: install test run docker-build docker-run clean
+.PHONY: install test lint typecheck run docker-build docker-run clean
 
 install:
 	$(PYTHON) -m venv $(VENV)
-	. $(VENV)/bin/activate && $(PIP) install --upgrade pip && $(PIP) install -r requirements.txt
+	. $(VENV)/bin/activate && $(PIP) install --upgrade pip && $(PIP) install -r requirements.txt -r requirements-dev.txt
 
 test:
 	. $(VENV)/bin/activate && pytest -q
+
+lint:
+	. $(VENV)/bin/activate && ruff check . && ruff format --check .
+
+typecheck:
+	. $(VENV)/bin/activate && mypy lib
 
 run:
 	. $(VENV)/bin/activate && $(PYTHON) main.py $(ARGS)

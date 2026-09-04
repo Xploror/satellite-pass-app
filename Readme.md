@@ -138,6 +138,10 @@ Below are the environment variables that can be configured in `Dockerfile` and/o
 
 ## Implementation
 
+### Command Line Interface
+
+Command line interface is the top priority for the application that can override properties described in the targetted YAML file. For example the `out_type` and `port` variables first priority is the Command Line inputs and if only not-specified in teh CLI, it searches the values from YAML file or environemnt variables.
+
 ### Writing configuration files
 
 The YAML configuration file is subdivided into `Assets`, `Lab` and `Output` attributes.

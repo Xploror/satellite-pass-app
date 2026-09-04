@@ -16,14 +16,14 @@ PORT = int(os.getenv("APP_PORT", "12346"))
 
 
 def main():
-    # INPUT DESIRED CONFIG FILE FROM ARGV 
+    # INPUT DESIRED CONFIG FILE FROM ARGV
     conf_file_path = (
         sys.argv[1] if len(sys.argv) > 1 else None
     ) or CONF_PATH.strip()  # conf_file path PRIORITY: 1. CLI  2. ENV_VAR
     out_type_cli = (
         int(sys.argv[2]) if len(sys.argv) > 2 else None
     )  # output_type as second argument (OPTIONAL)
-    port_cli = sys.argv[3] if len(sys.argv) > 3 else 0  # port as third argument (OPTIONAL)
+    port_cli = int(sys.argv[3]) if len(sys.argv) > 3 else 0  # port as third argument (OPTIONAL)
 
     # FIRST READ THE CONFIG YAML FILE AND CREATE DESIRED OBJECTS
     sats, lab, out_type = load_mission_info(conf_file_path + ".yaml")
