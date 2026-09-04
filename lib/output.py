@@ -70,8 +70,8 @@ class HTTPWriter(OutputWriter):
     def __init__(self, out_f: str, host: str, port: int):
         super().__init__(out_f, host, port)
         self.msg = b""  # Empty byte object
-        self._this_server = None
-        self._this_thread = None
+        self._this_server: HTTPServer | None = None
+        self._this_thread: threading.Thread | None = None
         self._initialize_server()
 
     def __del__(self):
@@ -150,8 +150,8 @@ class TCPWriter(OutputWriter):
     def __init__(self, out_f: str, host: str, port: int):
         super().__init__(out_f, host, port)
         self.msg = b""  # Empty byte object
-        self._server_socket = None
-        self._client_socket = None
+        self._server_socket: socket.socket | None = None
+        self._client_socket: socket.socket | None = None
         self._this_thread = None
         self.running = True
         self._initialize_sockets()
