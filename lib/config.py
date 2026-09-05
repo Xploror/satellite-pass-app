@@ -2,7 +2,7 @@ import os
 import sys
 
 import yaml
-from opencage.geocoder import OpenCageGeocode  # type: ignore
+from opencage.geocoder import OpenCageGeocode
 
 from lib.systems import Lab, MySatellites
 

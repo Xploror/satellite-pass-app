@@ -15,9 +15,10 @@ FROM base AS development
 ENV APP_PORT=80
 USER root
 RUN apt-get update && apt-get install -y build-essential curl git lsof gdb
-RUN pip install --no-cache-dir pytest
+COPY requirements-dev.txt ./
+RUN pip install --no-cache-dir -r requirements-dev.txt
 COPY . .
-ENTRYPOINT ["python", "main.py"]
+CMD ["python", "main.py"]
 
 FROM base AS production
 ENV APP_PORT=60

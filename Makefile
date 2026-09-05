@@ -23,14 +23,14 @@ run:
 	. $(VENV)/bin/activate && $(PYTHON) main.py $(ARGS)
 
 docker-build:
-	docker build -t satellite-pass-app .
+	docker build --target production -t satellite-pass-app .
 
 docker-test:
-	docker build -t satellite-pass-app .
-	docker run --rm -it satellite-pass-app pytest -q
+	docker build --target development -t satellite-pass-app:dev .
+	docker run --rm -it -e N2YO_APIKEY -e OPENCAGE_APIKEY satellite-pass-app:dev pytest -q
 
 docker-run:
-	docker run --rm -it satellite-pass-app
+	docker run --rm -it -e N2YO_APIKEY -e OPENCAGE_APIKEY satellite-pass-app
 
 clean:
 	rm -rf $(VENV) .pytest_cache tests/__pycache__ lib/__pycache__

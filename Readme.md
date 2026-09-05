@@ -10,6 +10,7 @@ This python application issues commands when specified satellites are passing ov
     - [Local development](#local-development)
     - [Docker container deployment](#docker-container-deployment)
     - [Environment variables](#environment-variables)
+- [Tool Settings](#tool-settings)
 - [Implementation](#implementation)
     - [Writing configuration files](#writing-configuration-files)
     - [Understanding output](#understanding-output)
@@ -135,6 +136,57 @@ Below are the environment variables that can be configured in `Dockerfile` and/o
 | APP_OUTFILE | string | output | 
 | APP_HOST | string | 127.0.0.1 | 
 | APP_PORT | int | 12346 | 
+
+## Tool Settings
+
+Tooling for tests, type checking, and linting/formatting is centrally configured in `pyproject.toml`. These are the same checks run by `make test` / `make lint` / `make typecheck`, `.github/workflows/ci.yml`, and the Docker `development` stage.
+
+### Pytest
+
+`[tool.pytest.ini_options]`
+
+| Setting | Value | What it does |
+| :--- | :--- | :--- |
+| `pythonpath` | `["."]` | Adds the project root to `sys.path` so tests can `import lib` without installing the project as a package |
+| `testpaths` | `["tests"]` | Restricts test discovery to the `tests/` folder |
+
+Run via `make test` or `pytest -q`.
+
+### Mypy
+
+`[tool.mypy]`
+
+| Setting | Value | What it does |
+| :--- | :--- | :--- |
+| `python_version` | `"3.12"` | Matches the project's runtime Python version, so stdlib type stubs are checked accurately |
+| `ignore_missing_imports` | `true` | Suppresses errors for third-party packages that ship no type stubs (e.g. `opencage`) |
+| `check_untyped_defs` | `true` | Type-checks function bodies even when they lack full type annotations, without requiring the whole codebase to be annotated |
+
+Run via `make typecheck` or `mypy lib`.
+
+> NOTE: If **ignore_missing_imports** is set **false** but specific packages need to be ignored, then add **# type: ignore** on the corresponding import line
+
+### Ruff (lint)
+
+`[tool.ruff]` / `[tool.ruff.lint]`
+
+| Setting | Value | What it does |
+| :--- | :--- | :--- |
+| `line-length` | `100` | Maximum line length enforced by lint and format checks |
+| `target-version` | `"py312"` | Lets ruff apply Python 3.12-aware syntax checks |
+| `select` | `["E", "F", "I"]` | Enables pycodestyle errors (`E`), Pyflakes for unused imports/undefined names (`F`), and isort-style import ordering (`I`) |
+
+Run via `make lint` or `ruff check .`.
+
+### Ruff (format)
+
+`[tool.ruff.format]`
+
+| Setting | Value | What it does |
+| :--- | :--- | :--- |
+| `quote-style` | `"double"` | Enforces double quotes when auto-formatting |
+
+Run via `make lint` or `ruff format --check .`.
 
 ## Implementation
 
