@@ -1,3 +1,5 @@
+[![CI Pipeline](https://github.com/Xploror/satellite-pass-app/actions/workflows/ci.yml/badge.svg)](https://github.com/Xploror/satellite-pass-app/actions/workflows/ci.yml) [![Code Coverage](https://github.com/Xploror/satellite-pass-app/actions/workflows/test-coverage.yml/badge.svg)](https://github.com/Xploror/satellite-pass-app/actions/workflows/test-coverage.yml)
+
 # Satellite-Pass-App
 
 This python application issues commands when specified satellites are passing over a specified location.
