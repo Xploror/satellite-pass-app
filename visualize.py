@@ -15,8 +15,8 @@ CONF_PATH = os.getenv("CONFIG_FILENAME", "config_files/conf_default")
 DEFAULT_OUTPUT = "visualizations/satellite_pass.gif"
 
 EARTH_RADIUS_KM = 6371.0  # Earth mean radius
-WINDOW_SEC = 200  # N2YO's documented cap for the positions endpoint
-SAMPLE_INTERVAL_SEC = 10  # matches main.py's real polling cadence
+WINDOW_SEC = 1200  # N2YO's documented cap for the positions endpoint
+SAMPLE_INTERVAL_SEC = 5  # matches main.py's real polling cadence
 
 
 def fov_boundary(lab: Lab, altitude_km: float, num_points: int = 180) -> tuple:
@@ -52,13 +52,12 @@ def fov_boundary(lab: Lab, altitude_km: float, num_points: int = 180) -> tuple:
     return lats, lons
 
 
-def average_altitude(trajectories: dict, sats: list) -> float:
+def average_altitude(trajectory: list) -> float:
     """
-    Averages each tracked satellite's first fetched altitude sample, in km.
+    Averages one satellite's fetched altitude samples across the fetch window, in km.
     """
 
-    first_samples = [trajectories[sat.norad_id][0]["alt"] for sat in sats]
-    return sum(first_samples) / len(first_samples)
+    return sum(sample["alt"] for sample in trajectory) / len(trajectory)
 
 
 def frame_steps(trajectories: dict, sats: list, window_sec: int, sample_every: int) -> list:
@@ -71,12 +70,12 @@ def frame_steps(trajectories: dict, sats: list, window_sec: int, sample_every: i
     return list(range(0, last_step + 1, sample_every))
 
 
-def build_animation(sats: list, lab: Lab, trajectories: dict, steps: list, fov: tuple) -> tuple:
+def build_animation(
+    sats: list, lab: Lab, trajectories: dict, visibilities: dict, steps: list, fovs: dict
+) -> tuple:
     """
-    Builds the animation: static basemap/lab/FOV drawn once, satellite markers updated per frame.
+    Builds the animation: static basemap/lab/FOV drawn once, satellite/link artists move per frame.
     """
-
-    fov_lats, fov_lons = fov
 
     fig, ax = plt.subplots(figsize=(10, 6), subplot_kw={"projection": ccrs.PlateCarree()})
     ax.set_global()
@@ -87,14 +86,34 @@ def build_animation(sats: list, lab: Lab, trajectories: dict, steps: list, fov: 
     ax.set_title(f"Satellite passes over the station ({lab.lat:.2f}, {lab.lng:.2f})")
 
     ax.plot(lab.lng, lab.lat, marker="^", color="black", markersize=9, transform=ccrs.PlateCarree())
-    ax.plot(
-        fov_lons,
-        fov_lats,
-        linestyle="--",
-        color="black",
-        linewidth=1,
-        transform=ccrs.PlateCarree(),
-    )
+
+    fov_bound = {
+        sat.norad_id: ax.plot(
+            [],
+            [],
+            linestyle="--",
+            color=sat.color.lower(),
+            linewidth=1,
+            alpha=0.5,
+            zorder=1,
+            transform=ccrs.PlateCarree(),
+        )[0]
+        for sat in sats
+    }
+
+    links = {
+        sat.norad_id: ax.plot(
+            [],
+            [],
+            linestyle="-",
+            color="green",
+            linewidth=1,
+            alpha=0.7,
+            zorder=2,
+            transform=ccrs.PlateCarree(),
+        )[0]
+        for sat in sats
+    }
 
     markers = {
         sat.norad_id: ax.plot(
@@ -104,7 +123,8 @@ def build_animation(sats: list, lab: Lab, trajectories: dict, steps: list, fov: 
             linestyle="",
             color=sat.color.lower(),  # matplotlib named colors are lowercase-only
             markersize=7,
-            label=sat.name,
+            zorder=3,
+            label="ID:" + str(sat.norad_id),
             transform=ccrs.PlateCarree(),
         )[0]
         for sat in sats
@@ -116,9 +136,17 @@ def build_animation(sats: list, lab: Lab, trajectories: dict, steps: list, fov: 
         step = steps[frame_idx]
         for sat in sats:
             position = trajectories[sat.norad_id][step]
+            is_visible = visibilities[sat.norad_id][step]
             markers[sat.norad_id].set_data([position["lng"]], [position["lat"]])
+            if is_visible:
+                links[sat.norad_id].set_data([lab.lng, position["lng"]], [lab.lat, position["lat"]])
+                fov_lats, fov_lons = fovs[sat.norad_id]
+                fov_bound[sat.norad_id].set_data(fov_lons, fov_lats)
+            else:
+                links[sat.norad_id].set_data([], [])
+                fov_bound[sat.norad_id].set_data([], [])
         time_text.set_text(f"t+{step}s")
-        return [*markers.values(), time_text]
+        return [*markers.values(), *links.values(), *fov_bound.values(), time_text]
 
     anim = FuncAnimation(fig, update, frames=len(steps), interval=200, blit=False)
     return fig, anim
@@ -132,11 +160,14 @@ def main() -> None:
 
     sats, lab, _out_type = load_mission_info(conf_file_path + ".yaml")
 
-    trajectories = fetch_trajectory(sats, lab, sec_ahead=WINDOW_SEC)
+    trajectories, visibilties = fetch_trajectory(sats, lab, sec_ahead=WINDOW_SEC)
     steps = frame_steps(trajectories, sats, WINDOW_SEC, SAMPLE_INTERVAL_SEC)
-    fov = fov_boundary(lab, average_altitude(trajectories, sats))
+    fovs = {
+        sat.norad_id: fov_boundary(lab, average_altitude(trajectories[sat.norad_id]))
+        for sat in sats
+    }
 
-    fig, anim = build_animation(sats, lab, trajectories, steps, fov)
+    fig, anim = build_animation(sats, lab, trajectories, visibilties, steps, fovs)
 
     out_dir = os.path.dirname(output_path)
     if out_dir and not os.path.isdir(out_dir):
