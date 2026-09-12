@@ -7,6 +7,7 @@ This python application issues commands when specified satellites are passing ov
 ## Table of contents
 
 - [Overview](#overview)
+    - [Application Flow](#application-flow)
     - [Repository Layout](#repository-layout)
 - [Installation](#installation)
     - [Local development](#local-development)
@@ -31,6 +32,12 @@ This application runs based on the initial inputs provided in a configuration fi
 The solution involves calling all the satellites with their respective NORAD ID as an API call that provides the positional and elevation angle information. The elevation angle from the response is enough to compare with the minimum elevation angle of the Lab to determine if the corresponding satellite is visible to the Lab or not.
 
 All the library functions are included in the **lib** folder, configuration files in the **config_files** folder, and pytest testing script in the **tests** folder. The *main.py* script systematically calls necessary modules to parse the configuration file, create necessary objects, call necessary APIs and write the outputs accordingly. 
+
+### Application Flow
+
+![Application Flow](docs/images/sat_app_flowchart.png)
+
+*Configuration is resolved, satellites and lab are loaded, an output writer is created once, then the app loops every 10 seconds fetching satellite positions and reporting visibility.*
 
 ### Repository Layout
 
@@ -277,7 +284,7 @@ This would free the port and would successfully run the project when using the H
 
 ## Discussion
 
-As a long-term project, I would utilize the API more efficiently rather than calling it every 10 seconds and comparing the elevation angle. I would also create a better frontend for more user-friendly configuration rather than filling out the YAML file where I can add additional functionalities such as enabling lighting constraints on satellites and lab, or scaling the satellite pass logic on a group of labs with their respective color codings. I would also create a nice visualization of labs around the Earth and the respective satellites as dots updating its position with time and representing link colors based on the color scheme.
+<!-- As a long-term project, I would utilize the API more efficiently rather than calling it every 10 seconds and comparing the elevation angle. I would also create a better frontend for more user-friendly configuration rather than filling out the YAML file where I can add additional functionalities such as enabling lighting constraints on satellites and lab, or scaling the satellite pass logic on a group of labs with their respective color codings. I would also create a nice visualization of labs around the Earth and the respective satellites as dots updating its position with time and representing link colors based on the color scheme. -->
 
 One of the biggest weakpoint of this application is its reliance on a third party database and a constant network access. In future work, I would most preferably target this specific vulnerability and develop robustness such as importing crucial data of desired satellites like TLEs, access intervals for next few days/weeks/months and keep SGP4 propagator ready for propagation through TLE after imported information expires.
 
@@ -339,9 +346,9 @@ services
 
 > NOTE: While running `docker compose up`, the development container runs the `conf_test1` YAML file with File output type and production container runs default YAML file with HTTPServer output type.
 
-### FUTURE PLANS FOR DEPLOYMENT/MAINTAINENCE
+<!-- ### FUTURE PLANS FOR DEPLOYMENT/MAINTAINENCE
 
-As a future development, I would prefer maintaining this project as a Github project with traditional feature branches for individual developers and have an additional staging branch (non-main) where all the final stable features can be pushed from all the developers which can be further passed to the main branch for production ready using Github workflow with push and PR events on main. The desirable actions I would like for this project would be running all the unittests, linting, build and publishing the container. 
+As a future development, I would prefer maintaining this project as a Github project with traditional feature branches for individual developers and have an additional staging branch (non-main) where all the final stable features can be pushed from all the developers which can be further passed to the main branch for production ready using Github workflow with push and PR events on main. The desirable actions I would like for this project would be running all the unittests, linting, build and publishing the container.  -->
 
 ## AI Disclosure
 
