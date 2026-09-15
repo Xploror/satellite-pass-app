@@ -77,12 +77,12 @@ def build_animation(
     Builds the animation: static basemap/lab/FOV drawn once, satellite/link artists move per frame.
     """
 
-    fig, ax = plt.subplots(figsize=(10, 6), subplot_kw={"projection": ccrs.PlateCarree()})
-    ax.set_global()
-    ax.add_feature(cfeature.OCEAN, facecolor="#cfe8f3")
-    ax.add_feature(cfeature.LAND, facecolor="#f0efe9")
-    ax.add_feature(cfeature.COASTLINE, linewidth=0.5)
-    ax.add_feature(cfeature.BORDERS, linewidth=0.3, linestyle=":")
+    fig, ax = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()}, figsize=(10, 6))
+    ax.set_global()  # type: ignore
+    ax.add_feature(cfeature.OCEAN, facecolor="#cfe8f3")  # type: ignore
+    ax.add_feature(cfeature.LAND, facecolor="#f0efe9")  # type: ignore
+    ax.add_feature(cfeature.COASTLINE, linewidth=0.5)  # type: ignore
+    ax.add_feature(cfeature.BORDERS, linewidth=0.3, linestyle=":")  # type: ignore
     ax.set_title(f"Satellite passes over the station ({lab.lat:.2f}, {lab.lng:.2f})")
 
     ax.plot(lab.lng, lab.lat, marker="^", color="black", markersize=9, transform=ccrs.PlateCarree())

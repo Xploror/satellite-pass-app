@@ -8,7 +8,7 @@ on:
 
 env:
   N2YO_APIKEY: ${{ secrets.N2YO_APIKEY }}
-  OPENCAGE_APIKEY: ${{ secrets.OPENCAGE_APIKEY }}
+  ANTHROPIC_APIKEY: ${{ secrets.ANTHROPIC_APIKEY }}
 
 jobs:
   testing:

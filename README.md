@@ -114,12 +114,12 @@ docker build -t satellite-pass-app .
 
 3. Run necessary functional tests on the project (recommended for first use):
 ```
-docker run -e N2YO_APIKEY=[your-N2YO-api] -e OPENCAGE_APIKEY=[your-opencage-api] --rm -it satellite-pass-app pytest -q
+docker run -e N2YO_APIKEY=[your-N2YO-api] -e ANTHROPIC_APIKEY=[your-anthropic-api] --rm -it satellite-pass-app pytest -q
 ```
 
 4. Run the container using the built docker image over default settings as:
 ```
-docker run -e N2YO_APIKEY=[your-N2YO-api] -e OPENCAGE_APIKEY=[your-opencage-api] --rm -it satellite-pass-app
+docker run -e N2YO_APIKEY=[your-N2YO-api] -e ANTHROPIC_APIKEY=[your-anthropic-api] --rm -it satellite-pass-app
 ```
 
 By default the container refers to the environment variables APP_HOST=0.0.0.0 and APP_PORT=80 as default container port address that is served. Docker's port mapping can be used to externally channel data outside the container since the port 80 is exposed.
@@ -168,7 +168,7 @@ Run via `make test` or `pytest -q`.
 | Setting | Value | What it does |
 | :--- | :--- | :--- |
 | `python_version` | `"3.12"` | Matches the project's runtime Python version, so stdlib type stubs are checked accurately |
-| `ignore_missing_imports` | `true` | Suppresses errors for third-party packages that ship no type stubs (e.g. `opencage`) |
+| `ignore_missing_imports` | `true` | Suppresses errors for third-party packages that ship no type stubs (e.g. `opencage` (now doesnt exist in the project)) |
 | `check_untyped_defs` | `true` | Type-checks function bodies even when they lack full type annotations, without requiring the whole codebase to be annotated |
 
 Run via `make typecheck` or `mypy lib`.
@@ -228,7 +228,7 @@ This application has other means of taking inputs apart from the YAML files and 
 | port (backup=8080) | int | CLI, ENV_VAR |
 | host | string | ENV_VAR |
 
-> NOTE: OpenCage API has an inbuilt spatial context and is able to estimate a latitude and longitude of a city name that might not exist (spelling mistakes). Thererfore, it is recommended to check the spelling of the City before running the project.
+> NOTE: Claude.ai API is called in the project session if the lab city name needs to be automatically parsed for its latitude and longitude, therefore for accurate location, please provide city name and possibly state/province and country, if multiple cities exist with the same name. NEEDS credits on your Claude Console to run this feature otherwise directly input the latitude and longitude.
 
 ### Understanding output
 

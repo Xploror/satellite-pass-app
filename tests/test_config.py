@@ -1,6 +1,6 @@
 import pytest
 
-from lib.config import load_mission_info, opencage_geoloc
+from lib.config import claude_geoloc, load_mission_info
 
 
 @pytest.fixture
@@ -11,9 +11,9 @@ def file_paths() -> list:
 @pytest.fixture
 def demo_cities() -> dict:
     return {
-        "London": [51.5099, -0.1181],
-        "Istanbul": [41.0138, 28.9497],
-        "Beijing": [39.9075, 116.3972],
+        "London": [51.507351, -0.127758],
+        "Istanbul": [41.008238, 28.978359],
+        "Beijing": [39.9042, 116.4074],
     }
 
 
@@ -31,19 +31,19 @@ def test_load_mission_info(file_paths: list):
             assert lab.min_elev == 5
             assert out_type == 3
         else:
-            opencage_loc = opencage_geoloc("Blacksburg")
+            claude_loc = claude_geoloc("Blacksburg")
             assert len(sats) == 4
             assert sats[0].norad_id == 25544
             assert sats[0].color == "Red"
-            assert lab.lat == opencage_loc[0]
-            assert lab.lng == opencage_loc[1]
+            assert abs(claude_loc[0] - lab.lat) < 0.0001
+            assert abs(claude_loc[1] - lab.lng) < 0.0001
             assert lab.min_elev == 30
             assert out_type == 3
 
 
-def test_opencage_geoloc(demo_cities: dict):
+def test_claude_geoloc(demo_cities: dict):
 
     for city, loc in demo_cities.items():
-        opencage_loc = opencage_geoloc(city)
-        assert abs(opencage_loc[0] - loc[0]) < 0.04
-        assert abs(opencage_loc[1] - loc[1]) < 0.04
+        claude_loc = claude_geoloc(city)
+        assert abs(claude_loc[0] - loc[0]) < 0.0001
+        assert abs(claude_loc[1] - loc[1]) < 0.0001
