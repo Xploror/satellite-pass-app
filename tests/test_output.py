@@ -135,7 +135,7 @@ def test_AccessReport_stdout(access_report, capsys):
     assert "ACCESS REPORT" in out
     assert "ISS (NORAD 25544)" in out
     assert "56361" in out and "48.1" in out
-    assert "no access in window" in out
+    assert "No access in window" in out
 
 
 def test_AccessReport_csv_and_json(access_report, tmp_path):

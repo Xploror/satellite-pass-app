@@ -31,18 +31,20 @@ def main() -> None:
         age_days = (config.window.start_utc - tle_epoch(sat.tle[0])).total_seconds() / 86400
         if abs(age_days) > config.tle.max_epoch_age_days:
             print(
-                colored_string(f"Warning: TLE for {sat.norad_id} is {age_days:+.1f} days from the "
-                                "window start; accuracy will be degraded.",
-                                'yellow'),
+                colored_string(
+                    f"Warning: TLE for {sat.norad_id} is {age_days:+.1f} days from the "
+                    "window start; accuracy will be degraded.",
+                    "yellow",
+                ),
                 file=sys.stderr,
             )
         try:
             report.add(sat, compute_access(sat, lab, config))
         except RuntimeError as e:  # SGP4 failure, e.g. decayed satellite
-            print(colored_string(f"Skipping {sat.norad_id}: {e}", 'red'), file=sys.stderr)
+            print(colored_string(f"Skipping {sat.norad_id}: {e}", "red"), file=sys.stderr)
 
     for path in report.write():
-        print(colored_string(f"Saved access report to {path}", 'cyan'))
+        print(colored_string(f"Saved access report to {path}", "cyan"))
 
 
 if __name__ == "__main__":

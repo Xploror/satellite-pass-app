@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from lib.providers.tle import tle_epoch
-from lib.utils import list_tuple_conversion, colored_string
+from lib.utils import colored_string, list_tuple_conversion
 
 
 class OutputWriter:
@@ -345,9 +345,13 @@ class AccessReport:
         )
         for sat, intervals in self.entries:
             lines.append("")
-            lines.append(colored_string(f"{sat.name} (NORAD {sat.norad_id}) - {self._tle_summary(sat)}", 'green'))
+            lines.append(
+                colored_string(
+                    f"{sat.name} (NORAD {sat.norad_id}) - {self._tle_summary(sat)}", "green"
+                )
+            )
             if not intervals:
-                lines.append(colored_string(" No access in window", 'yellow'))
+                lines.append(colored_string(" No access in window", "yellow"))
                 continue
             lines.append(header)
             lines.append("-" * len(header))
@@ -382,7 +386,10 @@ class AccessReport:
             return "no TLE"
         epoch = tle_epoch(sat.tle[0])
         age_days = (self.cfg.window.start_utc - epoch).total_seconds() / 86400
-        return f"TLE source: {sat.tle_source}, TLE epoch: {epoch:{self.TIME_FMT}} UTC ({age_days:+.2f} d)"
+        return (
+            f"TLE source: {sat.tle_source}, "
+            f"TLE epoch: {epoch:{self.TIME_FMT}} UTC ({age_days:+.2f} d)"
+        )
 
     @staticmethod
     def _flags(interval) -> str:
