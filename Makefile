@@ -4,7 +4,7 @@ VENV ?= .venv
 PYTHON_VENV := $(VENV)/bin/python
 ARGS ?=
 
-.PHONY: install test lint typecheck run docker-build docker-run clean
+.PHONY: install test lint typecheck run report docker-build docker-test docker-run clean
 
 install:
 	$(PYTHON) -m venv $(VENV)
@@ -21,6 +21,9 @@ typecheck:
 
 run:
 	. $(VENV)/bin/activate && $(PYTHON) main.py $(ARGS)
+
+report:
+	. $(VENV)/bin/activate && $(PYTHON) report.py $(ARGS)
 
 docker-build:
 	docker build --target production -t satellite-pass-app .
