@@ -18,10 +18,10 @@ def fetch_API(sat_objs: list, lab_obj, limit: int = 1, visible_only: bool = Fals
 
         url = parent_url + str(sat_id)
 
-        data = get_response(url, params={"lat": lab_lat, 
-                                         "lon": lab_lng, 
-                                         "limit": limit, 
-                                         "visible_only": visible_only}).json()
+        data = get_response(
+            url,
+            params={"lat": lab_lat, "lon": lab_lng, "limit": limit, "visible_only": visible_only},
+        ).json()
         if len(data) != 0:
             timestamp_interval = [
                 float(data[0]["rise"]["utc_timestamp"]),
