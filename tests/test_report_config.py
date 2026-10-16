@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from lib.report_config import load_report_config, parse_report_config, resolve
+from lib.report_config import load_report_config, parse_report_config, resolve_nullelev
 from lib.systems import Lab
 
 
@@ -23,13 +23,13 @@ def test_missing_file_exits():
 
 
 def test_null_min_elevation_falls_back_to_lab():
-    cfg = resolve(parse_report_config({}), Lab([0, 0], {"min_elev": 12}))
+    cfg = resolve_nullelev(parse_report_config({}), Lab([0, 0], {"min_elev": 12}))
     assert cfg.visibility.aer.elevation_deg == (12.0, 90.0)
 
 
 def test_explicit_min_elevation_is_kept():
     raw = {"Visibility": {"AER": {"elevation_deg": [3, 80]}}}
-    cfg = resolve(parse_report_config(raw), Lab([0, 0], {"min_elev": 12}))
+    cfg = resolve_nullelev(parse_report_config(raw), Lab([0, 0], {"min_elev": 12}))
     assert cfg.visibility.aer.elevation_deg == (3.0, 80.0)
 
 

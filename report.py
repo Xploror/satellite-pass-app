@@ -5,7 +5,7 @@ from lib.access import compute_access
 from lib.config import load_mission_info
 from lib.output import AccessReport
 from lib.providers.tle import fetch_tle, tle_epoch
-from lib.report_config import load_report_config, resolve
+from lib.report_config import load_report_config, resolve_nullelev
 
 CONF_PATH = os.getenv("CONFIG_FILENAME", "config_files/conf_default")
 REPORT_CONF_PATH = os.getenv("REPORT_CONFIG_FILENAME", "config_files/report_default")
@@ -19,8 +19,8 @@ def main() -> None:
         sys.argv[2] if len(sys.argv) > 2 else None
     ) or REPORT_CONF_PATH.strip()  # report conf PRIORITY: 1. CLI  2. ENV_VAR
 
-    sats, lab, _out_type = load_mission_info(conf_file_path + ".yaml")
-    config = resolve(load_report_config(report_file_path + ".yaml"), lab)
+    sats, lab, _ = load_mission_info(conf_file_path + ".yaml")
+    config = resolve_nullelev(load_report_config(report_file_path + ".yaml"), lab)
     lab.alt_m = config.station.altitude_m
 
     fetch_tle(sats, config.tle)

@@ -19,7 +19,7 @@ from lib.propagation import (
     propagate,
     teme_to_ecef,
 )
-from lib.report_config import AERCfg, parse_report_config, resolve
+from lib.report_config import AERCfg, parse_report_config, resolve_nullelev
 from lib.systems import Lab
 
 START = "2008-09-20T12:00:00Z"
@@ -100,7 +100,7 @@ def test_refine_edge_converges():
 
 
 def test_compute_access_refined_edges_sit_on_elevation_mask(iss_sat, lab):
-    cfg = resolve(report_cfg(), lab)
+    cfg = resolve_nullelev(report_cfg(), lab)
     intervals = compute_access(iss_sat, lab, cfg)
     assert len(intervals) >= 3
 
@@ -119,9 +119,9 @@ def test_compute_access_refined_edges_sit_on_elevation_mask(iss_sat, lab):
 
 
 def test_coarse_and_fine_steps_agree(iss_sat, lab):
-    coarse = compute_access(iss_sat, lab, resolve(report_cfg(), lab))
+    coarse = compute_access(iss_sat, lab, resolve_nullelev(report_cfg(), lab))
     raw = {"Window": {"start_utc": START, "duration_hours": 24, "time_step_s": 1}}
-    fine = compute_access(iss_sat, lab, resolve(parse_report_config(raw), lab))
+    fine = compute_access(iss_sat, lab, resolve_nullelev(parse_report_config(raw), lab))
 
     assert len(coarse) == len(fine)
     for a, b in zip(coarse, fine):
@@ -132,7 +132,7 @@ def test_coarse_and_fine_steps_agree(iss_sat, lab):
 
 def test_both_criterion_is_subset_of_each(iss_sat, lab):
     def run(criterion):
-        return compute_access(iss_sat, lab, resolve(report_cfg(criterion=criterion), lab))
+        return compute_access(iss_sat, lab, resolve_nullelev(report_cfg(criterion=criterion), lab))
 
     aer, los, both = run("aer"), run("los"), run("both")
     assert both

@@ -162,7 +162,7 @@ def parse_report_config(raw: dict) -> ReportConfig:
     return config
 
 
-def resolve(config: ReportConfig, lab) -> ReportConfig:
+def resolve_nullelev(config: ReportConfig, lab) -> ReportConfig:
     """
     Fills a null minimum elevation with the lab's min_elevation from the mission config.
     """
@@ -210,6 +210,7 @@ def _sectors(value) -> tuple:
     Normalises azimuth sectors to ((lo, hi), ...), accepting a single [lo, hi] pair too.
     """
 
+    # single [lo, hi] pair case
     if isinstance(value, (list, tuple)) and len(value) == 2 and not isinstance(value[0], list):
         value = [value]
     if not isinstance(value, (list, tuple)) or not value:

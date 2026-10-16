@@ -3,19 +3,13 @@ import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import requests
+from lib.utils import QuotaExceededError, get_response
 
 CELESTRAK_URL = "https://celestrak.org/NORAD/elements/gp.php"
 N2YO_TLE_URL = "https://api.n2yo.com/rest/v1/satellite/tle/"
 NETWORK_SOURCES = ("celestrak", "n2yo")
 
 ALPHA5 = "ABCDEFGHJKLMNPQRSTUVWXYZ"  # Alpha-5 catalog prefix letters (I and O are skipped)
-
-
-class QuotaExceededError(RuntimeError):
-    """
-    Raised when N2YO answers without TLE data (bad API key or exhausted quota).
-    """
 
 
 def fetch_tle(sat_objs: list, tle_cfg) -> None:
@@ -113,7 +107,7 @@ def _fetch_from(source: str, norad_id: int, tle_cfg) -> tuple | None:
     """
 
     if source == "celestrak":
-        text = _get(CELESTRAK_URL, params={"CATNR": norad_id, "FORMAT": "TLE"}).text
+        text = get_response(CELESTRAK_URL, params={"CATNR": norad_id, "FORMAT": "TLE"}).text
         if not text.strip() or "No GP data found" in text:
             return None
         return parse_tle(text, norad_id)
@@ -122,7 +116,7 @@ def _fetch_from(source: str, norad_id: int, tle_cfg) -> tuple | None:
         api_key = os.getenv("N2YO_APIKEY")
         if not api_key:
             raise ValueError("N2YO_APIKEY is not set")
-        data = _get(N2YO_TLE_URL + f"{norad_id}&apiKey={api_key}").json()
+        data = get_response(N2YO_TLE_URL + f"{norad_id}&apiKey={api_key}").json()
         if "tle" not in data:
             raise QuotaExceededError("Wrong API key or exceeded API transaction limit.")
         return parse_tle(data["tle"], norad_id) if data["tle"] else None
@@ -134,22 +128,6 @@ def _fetch_from(source: str, norad_id: int, tle_cfg) -> tuple | None:
             return None
 
     raise ValueError(f"Unknown TLE source {source!r}")
-
-
-def _get(url: str, params: dict | None = None) -> requests.Response:
-    """
-    GET with the same 5-attempt retry policy as the other providers.
-    """
-
-    for attempt in range(5):
-        try:
-            response = requests.get(url, params=params, timeout=3)
-            response.raise_for_status()
-            return response
-        except requests.exceptions.RequestException as e:
-            if attempt == 4:
-                raise ConnectionError(f"{url.split('&apiKey=')[0]} unreachable!") from e
-    raise ConnectionError(f"{url} unreachable!")
 
 
 def _cache_path(norad_id: int, tle_cfg) -> Path:

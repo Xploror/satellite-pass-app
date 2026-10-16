@@ -1,9 +1,15 @@
 import os
 
+import requests
+
 API_KEY = os.environ["N2YO_APIKEY"]
 
 
 class QuotaExceededError(RuntimeError):
+    """
+    Class to define whenever the API quota is exceeded
+    """
+
     pass
 
 
@@ -19,3 +25,27 @@ def is_port_available(host: str, port: int):
             return True
         except Exception:
             return False
+
+
+def get_response(url: str, params: dict | None = None) -> requests.Response:
+    """
+    GET with the 5-attempt retry policy.
+    """
+
+    for attempt in range(5):
+        try:
+            response = requests.get(url, params=params, timeout=3)
+            response.raise_for_status()
+            return response
+        except requests.exceptions.RequestException as e:
+            if attempt == 4:
+                if "&apiKey=" in url:
+                    raise ConnectionError(f"{url.split('&apiKey=')[0]} unreachable!") from e
+                else:
+                    raise ConnectionError(f"{url} unreachable!") from e
+    raise ConnectionError(f"{url} unreachable!")
+
+
+# ============== REPORT UTILS ===================
+
+# ===============================================

@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 import requests
 
-from lib.providers import tle as tle_provider
+from lib import utils
 from lib.providers.tle import _catalog_number, _checksum_ok, fetch_tle, parse_tle, tle_epoch
 from lib.report_config import TLECfg
 from lib.systems import MySatellites
@@ -76,7 +76,7 @@ def test_celestrak_falls_back_to_n2yo(monkeypatch, tmp_path):
         return FakeResponse(payload={"info": {}, "tle": f"{ISS_LINE1}\r\n{ISS_LINE2}"})
 
     monkeypatch.setenv("N2YO_APIKEY", "dummy")
-    monkeypatch.setattr(tle_provider.requests, "get", fake_get)
+    monkeypatch.setattr(utils.requests, "get", fake_get)
 
     sat = MySatellites("ISS", 25544, "Red")
     fetch_tle([sat], make_cfg(tmp_path))
@@ -89,7 +89,7 @@ def test_celestrak_falls_back_to_n2yo(monkeypatch, tmp_path):
 def test_cache_hit_skips_network(monkeypatch, tmp_path):
     cfg = make_cfg(tmp_path)
     monkeypatch.setattr(
-        tle_provider.requests,
+        utils.requests,
         "get",
         lambda url, params=None, timeout=None: FakeResponse(
             text=f"ISS\n{ISS_LINE1}\n{ISS_LINE2}\n"
@@ -100,7 +100,7 @@ def test_cache_hit_skips_network(monkeypatch, tmp_path):
     def no_network(*args, **kwargs):
         raise requests.exceptions.ConnectionError("network must not be used")
 
-    monkeypatch.setattr(tle_provider.requests, "get", no_network)
+    monkeypatch.setattr(utils.requests, "get", no_network)
     sat = MySatellites("ISS", 25544, "Red")
     fetch_tle([sat], cfg)
 
@@ -111,7 +111,7 @@ def test_cache_hit_skips_network(monkeypatch, tmp_path):
 def test_all_sources_failing_raises(monkeypatch, tmp_path):
     monkeypatch.delenv("N2YO_APIKEY", raising=False)
     monkeypatch.setattr(
-        tle_provider.requests,
+        utils.requests,
         "get",
         lambda url, params=None, timeout=None: FakeResponse(text="No GP data found"),
     )
