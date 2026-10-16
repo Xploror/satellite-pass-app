@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from lib.providers.tle import tle_epoch
+from lib.utils import list_tuple_conversion, colored_string
 
 
 class OutputWriter:
@@ -338,37 +339,37 @@ class AccessReport:
         ]
 
         header = (
-            f"{'Pass':>4} {'Rev(AOS)':>8} {'Rev(LOS)':>8}  {'AOS UTC':<19}  {'LOS UTC':<19} "
-            f"{'Dur (s)':>8} {'MaxEl':>6}  {'TCA':<8} {'AOS Az':>6} {'LOS Az':>6} "
-            f"{'MinRng km':>9}  Flags"
+            f"{'Pass':^4} {'Rev(AOS)':^8} {'Rev(LOS)':^8}  {'UTC(AOS)':^19}  {'UTC(LOS)':^19} "
+            f"{'Dur (s)':^8} {'MaxEl':^6}  {'TCA':^8} {'Az(AOS)':^6} {'Az(LOS)':^6} "
+            f"{'MinRng':^9}  Flags"
         )
         for sat, intervals in self.entries:
             lines.append("")
-            lines.append(f"{sat.name} (NORAD {sat.norad_id}) - {self._tle_summary(sat)}")
+            lines.append(colored_string(f"{sat.name} (NORAD {sat.norad_id}) - {self._tle_summary(sat)}", 'green'))
             if not intervals:
-                lines.append("  no access in window")
+                lines.append(colored_string(" No access in window", 'yellow'))
                 continue
             lines.append(header)
             lines.append("-" * len(header))
             for iv in intervals:
                 lines.append(
-                    f"{iv.pass_no:>4} {iv.rev_aos:>8} {iv.rev_los:>8}  "
+                    f"{iv.pass_no:^4} {iv.rev_aos:^8} {iv.rev_los:^8}  "
                     f"{iv.aos_utc:{self.TIME_FMT}}  {iv.los_utc:{self.TIME_FMT}} "
-                    f"{iv.duration_s:>8.1f} {iv.max_el_deg:>6.1f}  {iv.tca_utc:%H:%M:%S} "
-                    f"{iv.aos_az_deg:>6.1f} {iv.los_az_deg:>6.1f} {iv.min_range_km:>9.1f}  "
+                    f"{iv.duration_s:^7.1f} {iv.max_el_deg:^7.1f}  {iv.tca_utc:%H:%M:%S} "
+                    f"{iv.aos_az_deg:^7.1f} {iv.los_az_deg:^7.1f} {iv.min_range_km:^8.1f}  "
                     f"{self._flags(iv)}"
                 )
         return "\n".join(lines)
 
     def _criterion_summary(self) -> str:
         vis = self.cfg.visibility
-        el_min, el_max = vis.aer.elevation_deg
+        el_lims = list_tuple_conversion(vis.aer.elevation_deg)
+        az_sectors = list_tuple_conversion(vis.aer.azimuth_deg)
         rng_min, rng_max = vis.aer.range_km
-        sectors = ", ".join(f"[{lo:g}, {hi:g}]" for lo, hi in vis.aer.azimuth_deg)
         parts = []
         if vis.criterion in ("aer", "both"):
             parts.append(
-                f"el [{el_min:g}, {el_max:g}] deg, az {sectors}, "
+                f"el {el_lims} deg, az {az_sectors} deg, "
                 f"range [{rng_min:g}, {'inf' if rng_max is None else f'{rng_max:g}'}] km"
             )
         if vis.criterion in ("los", "both"):
@@ -381,7 +382,7 @@ class AccessReport:
             return "no TLE"
         epoch = tle_epoch(sat.tle[0])
         age_days = (self.cfg.window.start_utc - epoch).total_seconds() / 86400
-        return f"TLE {sat.tle_source}, epoch {epoch:{self.TIME_FMT}} UTC ({age_days:+.2f} d)"
+        return f"TLE source: {sat.tle_source}, TLE epoch: {epoch:{self.TIME_FMT}} UTC ({age_days:+.2f} d)"
 
     @staticmethod
     def _flags(interval) -> str:

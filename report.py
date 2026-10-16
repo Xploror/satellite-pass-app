@@ -6,6 +6,7 @@ from lib.config import load_mission_info
 from lib.output import AccessReport
 from lib.providers.tle import fetch_tle, tle_epoch
 from lib.report_config import load_report_config, resolve_nullelev
+from lib.utils import colored_string
 
 CONF_PATH = os.getenv("CONFIG_FILENAME", "config_files/conf_default")
 REPORT_CONF_PATH = os.getenv("REPORT_CONFIG_FILENAME", "config_files/report_default")
@@ -30,17 +31,18 @@ def main() -> None:
         age_days = (config.window.start_utc - tle_epoch(sat.tle[0])).total_seconds() / 86400
         if abs(age_days) > config.tle.max_epoch_age_days:
             print(
-                f"\033[33mWarning: TLE for {sat.norad_id} is {age_days:+.1f} days from the "
-                "window start; accuracy will be degraded.\033[0m",
+                colored_string(f"Warning: TLE for {sat.norad_id} is {age_days:+.1f} days from the "
+                                "window start; accuracy will be degraded.",
+                                'yellow'),
                 file=sys.stderr,
             )
         try:
             report.add(sat, compute_access(sat, lab, config))
         except RuntimeError as e:  # SGP4 failure, e.g. decayed satellite
-            print(f"\033[31mSkipping {sat.norad_id}: {e}\033[0m", file=sys.stderr)
+            print(colored_string(f"Skipping {sat.norad_id}: {e}", 'red'), file=sys.stderr)
 
     for path in report.write():
-        print(f"Saved access report to {path}")
+        print(colored_string(f"Saved access report to {path}", 'cyan'))
 
 
 if __name__ == "__main__":
