@@ -2,15 +2,9 @@ import os
 
 import requests
 
+from lib.utils import QuotaExceededError, get_response
+
 API_KEY = os.environ["N2YO_APIKEY"]
-
-
-class QuotaExceededError(RuntimeError):
-    """
-    Class to define whenever the API quota is exceeded
-    """
-
-    pass
 
 
 def fetch_API(sat_objs: list, lab_obj, sec_ahead: int = 1) -> None:
@@ -44,22 +38,14 @@ def fetch_API(sat_objs: list, lab_obj, sec_ahead: int = 1) -> None:
             + API_KEY
         )
 
-        for attempt in range(5):
-            try:
-                response = requests.get(url, timeout=3)
-                response.raise_for_status()
-                data = response.json()
-                try:
-                    first_pass = data["positions"][0]
-                    sat_obj.is_visible = first_pass["elevation"] > min_elev
-                except KeyError as e:
-                    raise QuotaExceededError(
-                        "Wrong API key or exceeded API transaction limit. Try using a new one!"
-                    ) from e
-                break
-            except requests.exceptions.RequestException as e:
-                if attempt == 4:
-                    raise ConnectionError(f"{url} unreachable!") from e
+        data = get_response(url).json()
+        try:
+            first_pass = data["positions"][0]
+            sat_obj.is_visible = first_pass["elevation"] > min_elev
+        except KeyError as e:
+            raise QuotaExceededError(
+                "Wrong API key or exceeded API transaction limit. Try using a new one!"
+            ) from e
 
 
 def fetch_trajectory(sat_objs: list, lab_obj, sec_ahead: int = 300) -> tuple[dict, dict]:

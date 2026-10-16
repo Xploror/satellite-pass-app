@@ -18,6 +18,9 @@ This python application issues commands when specified satellites are passing ov
     - [Writing configuration files](#writing-configuration-files)
     - [Understanding output](#understanding-output)
 - [Example](#example)
+- [Access Report](#access-report)
+    - [Report configuration](#report-configuration)
+    - [Report output](#report-output)
 - [Debugging](#debugging)
 - [Optional Task](#optional-task)
     - [Multi-Stage Dev & Prod Environment](#multi-stage-dev--prod-environment)
@@ -47,15 +50,20 @@ satellite-pass-app/
 ├── Makefile                    # All make instructions
 ├── requirements.txt            # Contains all necessary packages for the project
 ├── main.py                     # Main file for the application
+├── report.py                   # Entry point for the offline access report
 ├── config_files/               # Stores all the YAML configuration files for the application
 │   ├── conf_default.yaml       # Default configuration file
-│   ├── .
+│   ├── report_default.yaml     # Default access report settings
 │   ├── .
 │   └── .
 ├── lib/                        # Stores all the library functions for the application
 │   ├── __init__.py             # Artifact for lib package
 │   ├── config.py               # Stores methods to configure application based on the input YAML file
-│   ├── output.py               # Stores methods for supported application outputs
+│   ├── report_config.py        # Loads and validates the access report config
+│   ├── propagation.py          # SGP4 propagation, frame transforms and revolution numbers
+│   ├── access.py               # AER / LOS visibility criteria and access interval finder
+│   ├── providers/tle.py        # TLE download (CelesTrak, N2YO, file) with local cache
+│   ├── output.py               # Stores methods for supported application outputs and AccessReport
 │   ├── systems.py              # Stores intermediate classes for satellite and lab
 │   └── utils.py                # Stores logic for various API calls supported by the application
 └── tests/                      # unittest folder
@@ -265,6 +273,48 @@ For both File and HTTPServer outputs, it would look as follows:
 45198: NOT PASSING
 45098: Maroon
 ```
+
+## Access Report
+
+Besides the live 10 second poller, the app can predict passes offline. `report.py` downloads a TLE for every satellite in the mission config, propagates it with SGP4 over a configurable window (24 h by default) and lists every access interval with its revolution number.
+
+```
+make report ARGS="config_files/conf_test1 config_files/report_default"
+```
+
+The first argument is the mission config (satellites and lab, same as `main.py`); the second is the report config. Without arguments the env vars `CONFIG_FILENAME` and `REPORT_CONFIG_FILENAME` (default `config_files/report_default`) are used. The mission config still needs `ANTHROPIC_APIKEY` set because `lib/config.py` reads it at import.
+
+### Report configuration
+
+All report settings live in `config_files/report_default.yaml`, separate from the mission config:
+
+| Section | Key | Meaning |
+| :--- | :--- | :--- |
+| `Window` | `start_utc`, `duration_hours` | Window start (`now` or ISO-8601) and length |
+| `Window` | `time_step_s` | Sampling granularity. Passes shorter than this can be missed; keep it at 10 s or less for LEO |
+| `Window` | `refine_edges`, `refine_tolerance_s` | Bisect AOS/LOS between samples down to this tolerance |
+| `TLE` | `sources` | Priority order of `celestrak`, `n2yo` (needs `N2YO_APIKEY`) and `file` |
+| `TLE` | `cache_dir`, `cache_max_age_hours` | Downloaded TLEs are reused for this long (CelesTrak asks for at most one download per 2 h) |
+| `TLE` | `max_epoch_age_days` | Warn when a TLE epoch is this far from the window start |
+| `Station` | `altitude_m` | Lab height above the WGS84 ellipsoid |
+| `Visibility` | `criterion` | `aer`, `los`, or `both` (both must hold) |
+| `Visibility` | `apply_refraction` | Standard-atmosphere refraction added to elevation for the AER check |
+| `Visibility.AER` | `elevation_deg`, `azimuth_deg`, `range_km` | Allowed elevation `[min, max]` (null min uses the mission `min_elevation`), azimuth sectors (`[300, 60]` wraps through north) and range |
+| `Visibility.LOS` | `grazing_altitude_km` | The line of sight must clear the Earth by this height |
+| `Output` | `formats`, `directory`, `filename_prefix` | Any of `stdout`, `csv`, `json` |
+
+### Report output
+
+For each satellite the report lists pass number, revolution number at AOS and LOS, AOS/LOS time, duration, maximum elevation and its time (TCA), AOS/LOS azimuth and minimum range. `AOS<window` / `LOS>window` flag passes cut by the window edges.
+
+```
+Sat1 (NORAD 25544) - TLE celestrak, epoch 2026-09-26 20:26:13 UTC (+0.30 d)
+Pass Rev(AOS) Rev(LOS)  AOS UTC              LOS UTC              Dur (s)  MaxEl  TCA      AOS Az LOS Az MinRng km  Flags
+   1    58756    58756  2026-09-27 04:43:12  2026-09-27 04:49:57    405.0   16.0  04:46:35  283.8  177.9    1177.6
+   2    58766    58766  2026-09-27 19:47:58  2026-09-27 19:56:18    499.8   42.0  19:52:08  210.9   59.3     615.6
+```
+
+Accuracy notes: revolution numbers follow the NORAD convention (incremented at each ascending node) and use the raw 5 digit TLE field, which wraps at 100000 for long-lived objects such as the ISS. The TEME to ECEF rotation ignores polar motion (tens of metres). The LOS criterion is purely geometric; refraction only affects the AER check.
 
 ## Debugging
 
