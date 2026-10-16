@@ -19,7 +19,8 @@ def colored_string(text: str, col: str) -> str:
 
     Args:
         text (str): The text to print.
-        col (str): The color to use (SUPPORTS: red, green, blue, yellow, orange, magenta, cyan, white).
+        col (str): The color to use (SUPPORTS: red, green, blue, yellow, orange,
+        magenta, cyan, white).
     Returns:
         str: The text with the ANSI color code applied.
     """
