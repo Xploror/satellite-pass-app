@@ -3,8 +3,11 @@ import sys
 
 import requests
 import yaml
+from dotenv import load_dotenv
 
 from lib.systems import Lab, MySatellites
+
+load_dotenv()
 
 ANTHROPIC_APIKEY = os.environ["ANTHROPIC_APIKEY"]
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"

@@ -295,6 +295,64 @@ class AccessReport:
         self.cfg = report_cfg
         self.entries: list = []  # (sat, intervals)
         self.generated_utc = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
+        self.report_header()
+
+    @staticmethod
+    def _flags(interval) -> str:
+        flags = []
+        if interval.aos_truncated:
+            flags.append("AOS<window")
+        if interval.los_truncated:
+            flags.append("LOS>window")
+        return ",".join(flags)
+
+    @staticmethod
+    def _json_default(value):
+        if isinstance(value, datetime.datetime):
+            return value.isoformat()
+        raise TypeError(f"{type(value).__name__} is not JSON serializable")
+
+    def report_header(self) -> None:
+        """
+        Stores the header information for the report.
+        """
+        self.header_info = None
+
+    def _criterion_summary(self) -> str:
+        vis = self.cfg.visibility
+        el_lims = list_tuple_conversion(vis.aer.elevation_deg)
+        az_sectors = list_tuple_conversion(vis.aer.azimuth_deg)
+        rng_min, rng_max = vis.aer.range_km
+        parts = []
+        if vis.criterion in ("aer", "both"):
+            parts.append(
+                f"el {el_lims} deg, az {az_sectors} deg, "
+                f"range [{rng_min:g}, {'inf' if rng_max is None else f'{rng_max:g}'}] km"
+            )
+        if vis.criterion in ("los", "both"):
+            parts.append(f"LOS grazing {vis.los.grazing_altitude_km:g} km")
+        parts.append(f"refraction {'on' if vis.apply_refraction else 'off'}")
+        return " | ".join(parts)
+
+    def _tle_summary(self, sat) -> str:
+        if sat.tle is None:
+            return "no TLE"
+        epoch = tle_epoch(sat.tle[0])
+        age_days = (self.cfg.window.start_utc - epoch).total_seconds() / 86400
+        return (
+            f"TLE source: {sat.tle_source}, "
+            f"TLE epoch: {epoch:{self.TIME_FMT}} UTC ({age_days:+.2f} d)"
+        )
+
+    def _rows(self) -> list:
+        rows = []
+        for _sat, intervals in self.entries:
+            for iv in intervals:
+                row = asdict(iv)
+                for key in ("aos_utc", "los_utc", "tca_utc"):
+                    row[key] = row[key].isoformat()
+                rows.append(row)
+        return rows
 
     def add(self, sat, intervals: list) -> None:
         self.entries.append((sat, intervals))
@@ -324,16 +382,17 @@ class AccessReport:
         Header block with station/window/criterion settings, then one table per satellite.
         """
 
-        window, vis = self.cfg.window, self.cfg.visibility
+        window, vis, labb = self.cfg.window, self.cfg.visibility, self.cfg.station
         end = window.start_utc + datetime.timedelta(hours=window.duration_hours)
         lines = [
             "=" * 118,
             "ACCESS REPORT",
             f"Generated : {self.generated_utc:{self.TIME_FMT}} UTC",
-            f"Station   : lat {self.lab.lat:.5f}  lon {self.lab.lng:.5f}"
-            f"  alt {self.lab.alt_m:.1f} m",
+            f"Station   : lat {labb.lat_deg:.5f}  lon {labb.lng_deg:.5f}"
+            f"  alt {labb.altitude_m:.1f} m  minimum elevation {labb.min_elev_deg:.1f} deg",
             f"Window    : {window.start_utc:{self.TIME_FMT}} -> {end:{self.TIME_FMT}} UTC"
-            f"  (step {window.time_step_s:g} s, refine {'on' if window.refine_edges else 'off'})",
+            f"  (duration {window.duration_hours:g} hr, step {window.time_step_s:g} s, "
+            f"refine {'on' if window.refine_edges else 'off'})",
             f"Criterion : {vis.criterion}  | {self._criterion_summary()}",
             "=" * 118,
         ]
@@ -365,51 +424,6 @@ class AccessReport:
                 )
         return "\n".join(lines)
 
-    def _criterion_summary(self) -> str:
-        vis = self.cfg.visibility
-        el_lims = list_tuple_conversion(vis.aer.elevation_deg)
-        az_sectors = list_tuple_conversion(vis.aer.azimuth_deg)
-        rng_min, rng_max = vis.aer.range_km
-        parts = []
-        if vis.criterion in ("aer", "both"):
-            parts.append(
-                f"el {el_lims} deg, az {az_sectors} deg, "
-                f"range [{rng_min:g}, {'inf' if rng_max is None else f'{rng_max:g}'}] km"
-            )
-        if vis.criterion in ("los", "both"):
-            parts.append(f"LOS grazing {vis.los.grazing_altitude_km:g} km")
-        parts.append(f"refraction {'on' if vis.apply_refraction else 'off'}")
-        return " | ".join(parts)
-
-    def _tle_summary(self, sat) -> str:
-        if sat.tle is None:
-            return "no TLE"
-        epoch = tle_epoch(sat.tle[0])
-        age_days = (self.cfg.window.start_utc - epoch).total_seconds() / 86400
-        return (
-            f"TLE source: {sat.tle_source}, "
-            f"TLE epoch: {epoch:{self.TIME_FMT}} UTC ({age_days:+.2f} d)"
-        )
-
-    @staticmethod
-    def _flags(interval) -> str:
-        flags = []
-        if interval.aos_truncated:
-            flags.append("AOS<window")
-        if interval.los_truncated:
-            flags.append("LOS>window")
-        return ",".join(flags)
-
-    def _rows(self) -> list:
-        rows = []
-        for _sat, intervals in self.entries:
-            for iv in intervals:
-                row = asdict(iv)
-                for key in ("aos_utc", "los_utc", "tca_utc"):
-                    row[key] = row[key].isoformat()
-                rows.append(row)
-        return rows
-
     def _write_csv(self, path: Path) -> Path:
         with open(path, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=self.CSV_FIELDS)
@@ -430,20 +444,20 @@ class AccessReport:
                     "intervals": [row for row in self._rows() if row["norad_id"] == sat.norad_id],
                 }
             )
+        station = self.cfg.station
         document = {
             "meta": {
                 "generated_utc": self.generated_utc.isoformat(),
-                "station": {"lat": self.lab.lat, "lon": self.lab.lng, "alt_m": self.lab.alt_m},
+                "station": {
+                    "lat": station.lat_deg,
+                    "lon": station.lng_deg,
+                    "alt": station.altitude_m,
+                    "min_elev": station.min_elev_deg,
+                },
                 "config": asdict(self.cfg),
             },
             "satellites": satellites,
         }
         with open(path, "w") as f:
-            json.dump(document, f, indent=2, default=_json_default)
+            json.dump(document, f, indent=2, default=self._json_default)
         return path
-
-
-def _json_default(value):
-    if isinstance(value, datetime.datetime):
-        return value.isoformat()
-    raise TypeError(f"{type(value).__name__} is not JSON serializable")

@@ -21,7 +21,7 @@ def main() -> None:
     ) or REPORT_CONF_PATH.strip()  # report conf PRIORITY: 1. CLI  2. ENV_VAR
 
     sats, lab, _ = load_mission_info(conf_file_path + ".yaml")
-    config = resolve_nullelev(load_report_config(report_file_path + ".yaml"), lab)
+    config = resolve_nullelev(load_report_config(report_file_path + ".yaml", lab), lab)
     lab.alt_m = config.station.altitude_m
 
     fetch_tle(sats, config.tle)

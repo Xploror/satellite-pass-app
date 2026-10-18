@@ -55,7 +55,10 @@ class TLECfg:
 
 @dataclass(frozen=True)
 class StationCfg:
+    lat_deg: float
+    lng_deg: float
     altitude_m: float
+    min_elev_deg: float
 
 
 @dataclass(frozen=True)
@@ -94,7 +97,7 @@ class ReportConfig:
     output: OutputCfg
 
 
-def load_report_config(file_path: str) -> ReportConfig:
+def load_report_config(file_path: str, lab) -> ReportConfig:
     """
     Loads and validates the access-report YAML file.
     """
@@ -109,10 +112,10 @@ def load_report_config(file_path: str) -> ReportConfig:
         )
         sys.exit(1)
 
-    return parse_report_config(raw)
+    return parse_report_config(raw, lab)
 
 
-def parse_report_config(raw: dict) -> ReportConfig:
+def parse_report_config(raw: dict, lab) -> ReportConfig:
     """
     Builds a validated ReportConfig from a raw config dict, filling in defaults.
     """
@@ -141,7 +144,12 @@ def parse_report_config(raw: dict) -> ReportConfig:
             cache_max_age_hours=float(tle["cache_max_age_hours"]),
             max_epoch_age_days=float(tle["max_epoch_age_days"]),
         ),
-        station=StationCfg(altitude_m=float(station["altitude_m"])),
+        station=StationCfg(
+            lat_deg=float(lab.lat),
+            lng_deg=float(lab.lng),
+            altitude_m=float(station["altitude_m"]),
+            min_elev_deg=float(lab.min_elev),
+        ),
         visibility=VisibilityCfg(
             criterion=str(vis["criterion"]).lower(),
             apply_refraction=bool(vis["apply_refraction"]),
