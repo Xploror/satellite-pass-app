@@ -7,7 +7,7 @@ from random import random
 import pytest
 
 from lib.output import AccessReport, author
-from lib.report_config import parse_report_config, resolve_nullelev
+from lib.report_config import check_minelev, parse_report_config
 from lib.systems import AccessInterval, Lab, MySatellites
 
 
@@ -107,7 +107,7 @@ def access_report(tmp_path, iss_sat) -> AccessReport:
         "Output": {"directory": str(tmp_path / "reports"), "formats": ["stdout", "csv", "json"]},
         "Station": {"Latitude": 40.0, "Longitude": -75.0, "altitude_m": 120.0, "min_elevation": 10},
     }
-    cfg = resolve_nullelev(parse_report_config(raw))
+    cfg = check_minelev(parse_report_config(raw))
     aos = datetime(2008, 9, 21, 0, 25, 43, tzinfo=timezone.utc)
     interval = AccessInterval(
         norad_id=25544,

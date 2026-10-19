@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from lib.report_config import load_report_config, parse_report_config, resolve_nullelev
+from lib.report_config import check_minelev, load_report_config, parse_report_config
 
 
 def test_default_file_loads():
@@ -22,18 +22,51 @@ def test_missing_file_exits():
 
 
 def test_null_min_elevation_falls_back_to_lab():
-    raw = {"Station": {"Latitude": 0, "Longitude": 0, "altitude_m": 0, "min_elevation": 12}}
-    cfg = resolve_nullelev(parse_report_config(raw))
+    raw = {
+        "Station": {
+            "City": "",
+            "Latitude": 0,
+            "Longitude": 0,
+            "altitude_m": 0,
+            "min_elevation": 12,
+        },
+    }
+    cfg = check_minelev(parse_report_config(raw))
     assert cfg.visibility.aer.elevation_deg == (12.0, 90.0)
 
 
-def test_explicit_min_elevation_is_kept():
+def test_explicit_min_elevation_conditions():
     raw = {
         "Visibility": {"AER": {"elevation_deg": [3, 80]}},
-        "Station": {"Latitude": 0, "Longitude": 0, "altitude_m": 0, "min_elevation": 12},
+        "Station": {
+            "City": "",
+            "Latitude": 0,
+            "Longitude": 0,
+            "altitude_m": 0,
+            "min_elevation": 12,
+        },
     }
-    cfg = resolve_nullelev(parse_report_config(raw))
-    assert cfg.visibility.aer.elevation_deg == (3.0, 80.0)
+    cfg = check_minelev(parse_report_config(raw))
+    assert cfg.visibility.aer.elevation_deg == (12.0, 80.0)
+    raw["Visibility"]["AER"]["elevation_deg"][0] = 20
+    cfg2 = check_minelev(parse_report_config(raw))
+    assert cfg2.visibility.aer.elevation_deg == (20.0, 80.0)
+
+
+def test_city_based_lab_location():
+    raw = {
+        "Station": {
+            "City": "London",
+            "Latitude": 0,
+            "Longitude": 0,
+            "altitude_m": 0,
+            "min_elevation": 0,
+        },
+    }
+    cfg = parse_report_config(raw)
+    assert cfg.station.city == "London"
+    assert cfg.station.lat_deg == 51.507351
+    assert cfg.station.lng_deg == -0.127758
 
 
 def test_iso_start_and_single_azimuth_pair():

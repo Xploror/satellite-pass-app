@@ -298,7 +298,7 @@ class AccessReport:
         self.cfg = report_cfg
         self.entries: list = []  # (sat, intervals)
         self.generated_utc = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
-        self.report_header() # TODO
+        self.report_header()  # TODO
 
     @staticmethod
     def _flags(interval) -> str:

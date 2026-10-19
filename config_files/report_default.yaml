@@ -15,7 +15,7 @@ TLE:
   max_epoch_age_days: 7       # warn when the TLE epoch is this far from the window start
 
 Station:
-  City: Blacksburg
+  City:
   Latitude: -33.4489
   Longitude: -70.6693
   altitude_m: 0               # lab height above the WGS84 ellipsoid

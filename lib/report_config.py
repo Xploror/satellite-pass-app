@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 import yaml
 
+from lib.config import claude_geoloc
 from lib.utils import colored_string
 
 CRITERIA = ("aer", "los", "both")
@@ -25,7 +26,7 @@ DEFAULTS: dict = {
         "cache_max_age_hours": 2,
         "max_epoch_age_days": 7,
     },
-    "Station": {"Latitude": 0, "Longitude": 0, "altitude_m": 0, "min_elevation": 0},
+    "Station": {"City": "", "Latitude": 0, "Longitude": 0, "altitude_m": 0, "min_elevation": 0},
     "Visibility": {"criterion": "aer", "apply_refraction": False},
     "AER": {"elevation_deg": [None, 90], "azimuth_deg": [[0, 360]], "range_km": [0, None]},
     "LOS": {"grazing_altitude_km": 0},
@@ -57,6 +58,7 @@ class TLECfg:
 
 @dataclass(frozen=True)
 class StationCfg:
+    city: str
     lat_deg: float
     lng_deg: float
     altitude_m: float
@@ -114,7 +116,7 @@ def load_report_config(file_path: str) -> ReportConfig:
         )
         sys.exit(1)
 
-    return resolve_nullelev(parse_report_config(raw))
+    return check_minelev(parse_report_config(raw))
 
 
 def parse_report_config(raw: dict) -> ReportConfig:
@@ -130,6 +132,13 @@ def parse_report_config(raw: dict) -> ReportConfig:
     aer = {**DEFAULTS["AER"], **(vis_raw.get("AER") or {})}
     los = {**DEFAULTS["LOS"], **(vis_raw.get("LOS") or {})}
     output = {**DEFAULTS["Output"], **(raw.get("Output") or {})}
+
+    # City-based location
+    if station:
+        if station["City"]:
+            loc = claude_geoloc(station["City"])
+            station["Latitude"] = loc[0]
+            station["Longitude"] = loc[1]
 
     config = ReportConfig(
         window=WindowCfg(
@@ -147,6 +156,7 @@ def parse_report_config(raw: dict) -> ReportConfig:
             max_epoch_age_days=float(tle["max_epoch_age_days"]),
         ),
         station=StationCfg(
+            city=station["City"],
             lat_deg=float(station["Latitude"]),
             lng_deg=float(station["Longitude"]),
             altitude_m=float(station["altitude_m"]),
@@ -172,14 +182,23 @@ def parse_report_config(raw: dict) -> ReportConfig:
     return config
 
 
-def resolve_nullelev(config: ReportConfig) -> ReportConfig:
+def check_minelev(config: ReportConfig) -> ReportConfig:
     """
     Fills a null minimum elevation with the lab's min_elevation from the mission config.
     """
 
-    el_min, el_max = config.visibility.aer.elevation_deg
+    el_min, el_max = config.visibility.aer.elevation_deg  # AER elevation mask for report gen
     if el_min is not None:
-        return config
+        if el_min >= config.station.min_elev_deg:
+            return config
+        else:
+            print(
+                colored_string(
+                    f"Auto updating AER elevation mask: "
+                    f"[{el_min},{el_max}] -> [{config.station.min_elev_deg},{el_max}]",
+                    "yellow",
+                )
+            )
 
     aer = replace(config.visibility.aer, elevation_deg=(float(config.station.min_elev_deg), el_max))
     return replace(config, visibility=replace(config.visibility, aer=aer))

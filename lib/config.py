@@ -113,7 +113,7 @@ def claude_geoloc(city: str) -> list:
             pass
 
     print(
-        colored_string("Could not find the desired city. Please check the spelling!", 'red'),
+        colored_string("Could not find the desired city. Please check the spelling!", "red"),
         file=sys.stderr,
     )
     sys.exit(0)

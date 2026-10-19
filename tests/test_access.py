@@ -19,7 +19,7 @@ from lib.propagation import (
     propagate,
     teme_to_ecef,
 )
-from lib.report_config import AERCfg, parse_report_config, resolve_nullelev
+from lib.report_config import AERCfg, check_minelev, parse_report_config
 from lib.systems import Lab
 
 START = "2008-09-20T12:00:00Z"
@@ -103,7 +103,7 @@ def test_refine_edge_converges():
 
 
 def test_compute_access_refined_edges_sit_on_elevation_mask(iss_sat, lab):
-    cfg = resolve_nullelev(report_cfg())
+    cfg = check_minelev(report_cfg())
     intervals = compute_access(iss_sat, lab, cfg)
     assert len(intervals) >= 3
 
