@@ -26,7 +26,10 @@ START = "2008-09-20T12:00:00Z"
 
 
 def report_cfg(**visibility) -> object:
-    raw = {"Window": {"start_utc": START, "duration_hours": 24, "time_step_s": 10}}
+    raw = {
+        "Window": {"start_utc": START, "duration_hours": 24, "time_step_s": 10},
+        "Station": {"Latitude": 40.0, "Longitude": -75.0, "altitude_m": 0, "min_elevation": 10},
+    }
     if visibility:
         raw["Visibility"] = visibility
     return parse_report_config(raw)
@@ -100,7 +103,7 @@ def test_refine_edge_converges():
 
 
 def test_compute_access_refined_edges_sit_on_elevation_mask(iss_sat, lab):
-    cfg = resolve_nullelev(report_cfg(), lab)
+    cfg = resolve_nullelev(report_cfg())
     intervals = compute_access(iss_sat, lab, cfg)
     assert len(intervals) >= 3
 
@@ -119,9 +122,17 @@ def test_compute_access_refined_edges_sit_on_elevation_mask(iss_sat, lab):
 
 
 def test_coarse_and_fine_steps_agree(iss_sat, lab):
-    coarse = compute_access(iss_sat, lab, resolve_nullelev(report_cfg(), lab))
-    raw = {"Window": {"start_utc": START, "duration_hours": 24, "time_step_s": 1}}
-    fine = compute_access(iss_sat, lab, resolve_nullelev(parse_report_config(raw), lab))
+    coarse = compute_access(iss_sat, lab, report_cfg())
+    raw = {
+        "Window": {"start_utc": START, "duration_hours": 24, "time_step_s": 1},
+        "Station": {
+            "Latitude": lab.lat,
+            "Longitude": lab.lng,
+            "altitude_m": lab.alt_m,
+            "min_elevation": lab.min_elev,
+        },
+    }
+    fine = compute_access(iss_sat, lab, parse_report_config(raw))
 
     assert len(coarse) == len(fine)
     for a, b in zip(coarse, fine):
@@ -132,7 +143,7 @@ def test_coarse_and_fine_steps_agree(iss_sat, lab):
 
 def test_both_criterion_is_subset_of_each(iss_sat, lab):
     def run(criterion):
-        return compute_access(iss_sat, lab, resolve_nullelev(report_cfg(criterion=criterion), lab))
+        return compute_access(iss_sat, lab, report_cfg(criterion=criterion))
 
     aer, los, both = run("aer"), run("los"), run("both")
     assert both

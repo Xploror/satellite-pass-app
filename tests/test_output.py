@@ -105,8 +105,9 @@ def access_report(tmp_path, iss_sat) -> AccessReport:
     raw = {
         "Window": {"start_utc": "2008-09-20T12:00:00Z"},
         "Output": {"directory": str(tmp_path / "reports"), "formats": ["stdout", "csv", "json"]},
+        "Station": {"Latitude": 40.0, "Longitude": -75.0, "altitude_m": 120.0, "min_elevation": 10},
     }
-    cfg = resolve_nullelev(parse_report_config(raw), lab)
+    cfg = resolve_nullelev(parse_report_config(raw))
     aos = datetime(2008, 9, 21, 0, 25, 43, tzinfo=timezone.utc)
     interval = AccessInterval(
         norad_id=25544,
@@ -151,7 +152,7 @@ def test_AccessReport_csv_and_json(access_report, tmp_path):
 
     with open(json_path) as f:
         document = json.load(f)
-    assert document["meta"]["station"]["alt_m"] == 120.0
+    assert document["meta"]["station"]["alt"] == 120.0
     assert document["meta"]["config"]["visibility"]["criterion"] == "aer"
     assert [s["norad_id"] for s in document["satellites"]] == [25544, 45427]
     assert document["satellites"][0]["intervals"][0]["max_el_deg"] == 48.1

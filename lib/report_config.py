@@ -23,7 +23,7 @@ DEFAULTS: dict = {
         "cache_max_age_hours": 2,
         "max_epoch_age_days": 7,
     },
-    "Station": {"altitude_m": 0},
+    "Station": {"Latitude": 0, "Longitude": 0, "altitude_m": 0, "min_elevation": 0},
     "Visibility": {"criterion": "aer", "apply_refraction": False},
     "AER": {"elevation_deg": [None, 90], "azimuth_deg": [[0, 360]], "range_km": [0, None]},
     "LOS": {"grazing_altitude_km": 0},
@@ -97,7 +97,7 @@ class ReportConfig:
     output: OutputCfg
 
 
-def load_report_config(file_path: str, lab) -> ReportConfig:
+def load_report_config(file_path: str) -> ReportConfig:
     """
     Loads and validates the access-report YAML file.
     """
@@ -112,10 +112,10 @@ def load_report_config(file_path: str, lab) -> ReportConfig:
         )
         sys.exit(1)
 
-    return parse_report_config(raw, lab)
+    return resolve_nullelev(parse_report_config(raw))
 
 
-def parse_report_config(raw: dict, lab) -> ReportConfig:
+def parse_report_config(raw: dict) -> ReportConfig:
     """
     Builds a validated ReportConfig from a raw config dict, filling in defaults.
     """
@@ -145,10 +145,10 @@ def parse_report_config(raw: dict, lab) -> ReportConfig:
             max_epoch_age_days=float(tle["max_epoch_age_days"]),
         ),
         station=StationCfg(
-            lat_deg=float(lab.lat),
-            lng_deg=float(lab.lng),
+            lat_deg=float(station["Latitude"]),
+            lng_deg=float(station["Longitude"]),
             altitude_m=float(station["altitude_m"]),
-            min_elev_deg=float(lab.min_elev),
+            min_elev_deg=float(station["min_elevation"]),
         ),
         visibility=VisibilityCfg(
             criterion=str(vis["criterion"]).lower(),
@@ -170,7 +170,7 @@ def parse_report_config(raw: dict, lab) -> ReportConfig:
     return config
 
 
-def resolve_nullelev(config: ReportConfig, lab) -> ReportConfig:
+def resolve_nullelev(config: ReportConfig) -> ReportConfig:
     """
     Fills a null minimum elevation with the lab's min_elevation from the mission config.
     """
@@ -179,7 +179,7 @@ def resolve_nullelev(config: ReportConfig, lab) -> ReportConfig:
     if el_min is not None:
         return config
 
-    aer = replace(config.visibility.aer, elevation_deg=(float(lab.min_elev), el_max))
+    aer = replace(config.visibility.aer, elevation_deg=(float(config.station.min_elev_deg), el_max))
     return replace(config, visibility=replace(config.visibility, aer=aer))
 
 

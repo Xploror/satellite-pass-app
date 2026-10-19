@@ -5,7 +5,7 @@ from lib.access import compute_access
 from lib.config import load_mission_info
 from lib.output import AccessReport
 from lib.providers.tle import fetch_tle, tle_epoch
-from lib.report_config import load_report_config, resolve_nullelev
+from lib.report_config import load_report_config
 from lib.utils import colored_string
 
 CONF_PATH = os.getenv("CONFIG_FILENAME", "config_files/conf_default")
@@ -21,7 +21,7 @@ def main() -> None:
     ) or REPORT_CONF_PATH.strip()  # report conf PRIORITY: 1. CLI  2. ENV_VAR
 
     sats, lab, _ = load_mission_info(conf_file_path + ".yaml")
-    config = resolve_nullelev(load_report_config(report_file_path + ".yaml", lab), lab)
+    config = load_report_config(report_file_path + ".yaml")
     lab.alt_m = config.station.altitude_m
 
     fetch_tle(sats, config.tle)
