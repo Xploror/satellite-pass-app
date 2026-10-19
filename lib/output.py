@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import socket
+import sys
 import threading
 import time
 from dataclasses import asdict
@@ -119,11 +120,13 @@ class HTTPWriter(OutputWriter):
             self._this_thread.start()
         except OSError:
             raise RuntimeError(
-                "\033[33m"
-                + self.host
-                + "/"
-                + str(self.port)
-                + " seems unavailable. Try killing the process\033[0m"
+                colored_string(
+                    self.host
+                    + "/"
+                    + str(self.port)
+                    + " seems unavailable. Try killing the process",
+                    "yellow",
+                )
             )
 
     def stop_server(self):
@@ -295,7 +298,7 @@ class AccessReport:
         self.cfg = report_cfg
         self.entries: list = []  # (sat, intervals)
         self.generated_utc = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
-        self.report_header()
+        self.report_header() # TODO
 
     @staticmethod
     def _flags(interval) -> str:
@@ -316,7 +319,7 @@ class AccessReport:
         """
         Stores the header information for the report.
         """
-        self.header_info = None
+        self.report_header_info = None
 
     def _criterion_summary(self) -> str:
         vis = self.cfg.visibility
@@ -362,8 +365,15 @@ class AccessReport:
         Writes every configured format; returns the paths of the files created.
         """
 
+        if not self.entries:
+            print(
+                colored_string("Cannot write an empty report!", "red"),
+                file=sys.stderr,
+            )
+            sys.exit(0)
+
         paths = []
-        stem = f"{self.cfg.output.filename_prefix}_{self.generated_utc:%Y%m%dT%H%M%SZ}"
+        file_name = f"{self.cfg.output.filename_prefix}_{self.generated_utc:%Y%m%dT%H%M%SZ}"
         out_dir = Path(self.cfg.output.directory)
         if {"csv", "json"} & set(self.cfg.output.formats):
             out_dir.mkdir(parents=True, exist_ok=True)
@@ -372,9 +382,9 @@ class AccessReport:
             if fmt == "stdout":
                 print(self.render_text())
             elif fmt == "csv":
-                paths.append(self._write_csv(out_dir / f"{stem}.csv"))
+                paths.append(self._write_csv(out_dir / f"{file_name}.csv"))
             elif fmt == "json":
-                paths.append(self._write_json(out_dir / f"{stem}.json"))
+                paths.append(self._write_json(out_dir / f"{file_name}.json"))
         return paths
 
     def render_text(self) -> str:
@@ -382,14 +392,14 @@ class AccessReport:
         Header block with station/window/criterion settings, then one table per satellite.
         """
 
-        window, vis, labb = self.cfg.window, self.cfg.visibility, self.cfg.station
+        window, vis, lab = self.cfg.window, self.cfg.visibility, self.cfg.station
         end = window.start_utc + datetime.timedelta(hours=window.duration_hours)
         lines = [
             "=" * 118,
             "ACCESS REPORT",
             f"Generated : {self.generated_utc:{self.TIME_FMT}} UTC",
-            f"Station   : lat {labb.lat_deg:.5f}  lon {labb.lng_deg:.5f}"
-            f"  alt {labb.altitude_m:.1f} m  minimum elevation {labb.min_elev_deg:.1f} deg",
+            f"Station   : lat {lab.lat_deg:.5f}  lon {lab.lng_deg:.5f}"
+            f"  alt {lab.altitude_m:.1f} m  minimum elevation {lab.min_elev_deg:.1f} deg",
             f"Window    : {window.start_utc:{self.TIME_FMT}} -> {end:{self.TIME_FMT}} UTC"
             f"  (duration {window.duration_hours:g} hr, step {window.time_step_s:g} s, "
             f"refine {'on' if window.refine_edges else 'off'})",
@@ -444,17 +454,24 @@ class AccessReport:
                     "intervals": [row for row in self._rows() if row["norad_id"] == sat.norad_id],
                 }
             )
-        station = self.cfg.station
+        station_setting = self.cfg.station
+        window_setting = self.cfg.window
+        vis_setting = self.cfg.visibility
+        tle_setting = self.cfg.tle
+        output_setting = self.cfg.output
         document = {
             "meta": {
                 "generated_utc": self.generated_utc.isoformat(),
+                "simulation-window": asdict(window_setting),
                 "station": {
-                    "lat": station.lat_deg,
-                    "lon": station.lng_deg,
-                    "alt": station.altitude_m,
-                    "min_elev": station.min_elev_deg,
+                    "lat": station_setting.lat_deg,
+                    "lon": station_setting.lng_deg,
+                    "alt": station_setting.altitude_m,
+                    "min_elev": station_setting.min_elev_deg,
+                    "visibility": asdict(vis_setting),
                 },
-                "config": asdict(self.cfg),
+                "tle-settings": asdict(tle_setting),
+                "output-settings": asdict(output_setting),
             },
             "satellites": satellites,
         }

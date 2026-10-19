@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 
 import yaml
 
+from lib.utils import colored_string
+
 CRITERIA = ("aer", "los", "both")
 TLE_SOURCES = ("celestrak", "n2yo", "file")
 OUTPUT_FORMATS = ("stdout", "csv", "json")
@@ -107,7 +109,7 @@ def load_report_config(file_path: str) -> ReportConfig:
             raw = yaml.safe_load(file) or {}
     except FileNotFoundError:
         print(
-            "\033[31mReport configuration file not found. Check path and try again.\033[0m",
+            colored_string("Report configuration file not found. Check path and try again.", "red"),
             file=sys.stderr,
         )
         sys.exit(1)

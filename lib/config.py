@@ -3,11 +3,9 @@ import sys
 
 import requests
 import yaml
-from dotenv import load_dotenv
 
 from lib.systems import Lab, MySatellites
-
-load_dotenv()
+from lib.utils import colored_string
 
 ANTHROPIC_APIKEY = os.environ["ANTHROPIC_APIKEY"]
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
@@ -45,7 +43,7 @@ def load_config(file_path: str) -> dict:
             configs["Lab"]["Longitude"] = loc[1]
     except FileNotFoundError:
         print(
-            "\033[31mConfiguration file not found. Check path and try again.\033[0m",
+            colored_string("Configuration file not found. Check path and try again.", "red"),
             file=sys.stderr,
         )
         sys.exit(1)
@@ -115,7 +113,7 @@ def claude_geoloc(city: str) -> list:
             pass
 
     print(
-        "\033[31mCould not find the desired city. Please check the spelling!\033[0m",
+        colored_string("Could not find the desired city. Please check the spelling!", 'red'),
         file=sys.stderr,
     )
     sys.exit(0)
