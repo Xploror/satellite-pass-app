@@ -153,7 +153,7 @@ def test_AccessReport_csv_and_json(access_report, tmp_path):
     with open(json_path) as f:
         document = json.load(f)
     assert document["meta"]["station"]["alt"] == 120.0
-    assert document["meta"]["config"]["visibility"]["criterion"] == "aer"
+    assert document["meta"]["station"]["visibility"]["criterion"] == "aer"
     assert [s["norad_id"] for s in document["satellites"]] == [25544, 45427]
     assert document["satellites"][0]["intervals"][0]["max_el_deg"] == 48.1
     assert document["satellites"][1]["intervals"] == []
