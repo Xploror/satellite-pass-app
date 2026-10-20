@@ -17,7 +17,7 @@ class Lab:
         self.lat = location[0]
         self.lng = location[1]
         self.min_elev = constraints["min_elev"]  # deg
-        self.alt_m = alt_m  # height above the WGS84 ellipsoid
+        self.alt_m = float(alt_m) or 0.0  # height above the WGS84 ellipsoid
 
 
 @dataclass

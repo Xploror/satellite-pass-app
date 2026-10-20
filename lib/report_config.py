@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 
 import yaml
 
-from lib.config import claude_geoloc
 from lib.utils import colored_string
 
 CRITERIA = ("aer", "los", "both")
@@ -30,7 +29,7 @@ DEFAULTS: dict = {
     "Visibility": {"criterion": "aer", "apply_refraction": False},
     "AER": {"elevation_deg": [None, 90], "azimuth_deg": [[0, 360]], "range_km": [0, None]},
     "LOS": {"grazing_altitude_km": 0},
-    "Output": {
+    "Async_Output": {
         "formats": ["stdout", "csv", "json"],
         "directory": "reports",
         "filename_prefix": "access_report",
@@ -131,14 +130,7 @@ def parse_report_config(raw: dict) -> ReportConfig:
     vis = {**DEFAULTS["Visibility"], **vis_raw}
     aer = {**DEFAULTS["AER"], **(vis_raw.get("AER") or {})}
     los = {**DEFAULTS["LOS"], **(vis_raw.get("LOS") or {})}
-    output = {**DEFAULTS["Output"], **(raw.get("Output") or {})}
-
-    # City-based location
-    if station:
-        if station["City"]:
-            loc = claude_geoloc(station["City"])
-            station["Latitude"] = loc[0]
-            station["Longitude"] = loc[1]
+    output = {**DEFAULTS["Async_Output"], **(raw.get("Async_Output") or {})}
 
     config = ReportConfig(
         window=WindowCfg(

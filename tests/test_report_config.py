@@ -53,22 +53,6 @@ def test_explicit_min_elevation_conditions():
     assert cfg2.visibility.aer.elevation_deg == (20.0, 80.0)
 
 
-def test_city_based_lab_location():
-    raw = {
-        "Station": {
-            "City": "London",
-            "Latitude": 0,
-            "Longitude": 0,
-            "altitude_m": 0,
-            "min_elevation": 0,
-        },
-    }
-    cfg = parse_report_config(raw)
-    assert cfg.station.city == "London"
-    assert cfg.station.lat_deg == 51.507351
-    assert cfg.station.lng_deg == -0.127758
-
-
 def test_iso_start_and_single_azimuth_pair():
     raw = {
         "Window": {"start_utc": "2026-09-26T06:30:00Z"},
@@ -91,7 +75,7 @@ def test_iso_start_and_single_azimuth_pair():
         {"Visibility": {"AER": {"range_km": [500, 100]}}},
         {"TLE": {"sources": ["spacetrack"]}},
         {"TLE": {"sources": ["file"]}},
-        {"Output": {"formats": ["xlsx"]}},
+        {"Async_Output": {"formats": ["xlsx"]}},
     ],
 )
 def test_invalid_settings_raise(raw):

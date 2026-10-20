@@ -4,6 +4,7 @@ import sys
 import requests
 import yaml
 
+from lib.report_config import check_minelev, parse_report_config
 from lib.systems import Lab, MySatellites
 from lib.utils import colored_string
 
@@ -35,7 +36,7 @@ def load_config(file_path: str) -> dict:
 
     try:
         with open(file_path, "r") as file:
-            configs = yaml.safe_load(file)
+            configs = yaml.safe_load(file) or {}
         # Checks if City attribute is non-empty to override Lat, Lng from config file
         if configs["Lab"]["City"]:
             loc = claude_geoloc(configs["Lab"]["City"])
@@ -60,6 +61,11 @@ def load_mission_info(file_path: str) -> tuple:
         file_path (str): Path to the YAML mission information file.
     """
     configs = load_config(file_path)
+    if configs["Mode"]["Async"]:
+        configs["Report"]["Station"] = configs["Lab"]
+        out = check_minelev(parse_report_config(configs["Report"]))
+    else:
+        out = configs["Sync_Output"]
     return (
         [
             MySatellites(sat_name, sat_info["ID"], sat_info["Color"])
@@ -68,8 +74,9 @@ def load_mission_info(file_path: str) -> tuple:
         Lab(
             [configs["Lab"]["Latitude"], configs["Lab"]["Longitude"]],
             {"min_elev": configs["Lab"]["min_elevation"]},
+            configs["Lab"]["altitude_m"],
         ),
-        configs["Output"],
+        out,
     )
 
 
