@@ -7,6 +7,7 @@ from lib.config import load_mission_info
 from lib.output import AccessReport, author
 from lib.providers.n2yo import fetch_API
 from lib.providers.tle import fetch_tle, tle_epoch
+from lib.report_config import ReportConfig
 from lib.utils import colored_string, is_port_available
 
 CONF_PATH = os.getenv("CONFIG_FILENAME", "config_files/conf_default")
@@ -28,27 +29,8 @@ def main() -> None:
     # FIRST READ THE CONFIG YAML FILE AND CREATE DESIRED OBJECTS
     sats, lab, out = load_mission_info(conf_file_path + ".yaml")
 
-    if isinstance(out, int):  # Sync mode
-        out_type = out_type_cli or out  # out_type PRIORITY: 1. CLI  2. YAML
-        port = port_cli or (
-            PORT if is_port_available(HOST, PORT) else 8080
-        )  # Checks if host/port address is available, if not then use port_cli
-
-        # DEFINE OUTPUTWRITER OBJECT
-        writer = author(out_type, out_f=OUT_F, host=HOST, port=port)
-
-        while True:
-            # USING THE API TO UPDATE SAT OBJECTS GIVEN A DESIRED LOCATION
-            fetch_API(sats, lab)
-
-            # WRITING OUTPUT
-            writer.write(sats)
-
-            # 10 SECOND INTERVAL
-            time.sleep(10)
-
-    else:  # Async mode
-        config = out
+    if ReportConfig in list(map(type, out)):  # Async mode
+        config = out[-1]
         fetch_tle(sats, config.tle)
 
         report = AccessReport(lab, config)
@@ -70,6 +52,25 @@ def main() -> None:
 
         for path in report.write():
             print(colored_string(f"Saved access report to {path}", "cyan"))
+
+    if int in list(map(type, out)):  # Sync mode
+        out_type = out_type_cli or out[0]  # out_type PRIORITY: 1. CLI  2. YAML
+        port = port_cli or (
+            PORT if is_port_available(HOST, PORT) else 8080
+        )  # Checks if host/port address is available, if not then use port_cli
+
+        # DEFINE OUTPUTWRITER OBJECT
+        writer = author(out_type, out_f=OUT_F, host=HOST, port=port)
+
+        while True:
+            # USING THE API TO UPDATE SAT OBJECTS GIVEN A DESIRED LOCATION
+            fetch_API(sats, lab)
+
+            # WRITING OUTPUT
+            writer.write(sats)
+
+            # 10 SECOND INTERVAL
+            time.sleep(10)
 
 
 if __name__ == "__main__":

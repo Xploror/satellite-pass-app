@@ -61,11 +61,14 @@ def load_mission_info(file_path: str) -> tuple:
         file_path (str): Path to the YAML mission information file.
     """
     configs = load_config(file_path)
-    if configs["Mode"]["Async"]:
-        configs["Report"]["Station"] = configs["Lab"]
-        out = check_minelev(parse_report_config(configs["Report"]))
-    else:
-        out = configs["Sync_Output"]
+    out = [configs["Sync_Output"]]
+    if configs["Mode"]["Async"]:  # Async
+        configs["Report"]["Station"] = configs["Lab"]  # Updates the report's station info
+        async_out = check_minelev(parse_report_config(configs["Report"]))
+        if configs["Mode"]["Async"] == "both":
+            out.append(async_out)
+        else:
+            out = [async_out]
     return (
         [
             MySatellites(sat_name, sat_info["ID"], sat_info["Color"])

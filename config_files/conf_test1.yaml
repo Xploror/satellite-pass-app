@@ -32,7 +32,7 @@ Lab:
   min_elevation: 5
 
 Mode:
-  Async: false
+  Async: false # true | false | both
 
 ######################## Sync output settings ################################
 Sync_Output: 3  # 1-> STDOUT | 2-> FILE | 3-> TCP connection | 4 -> HTTPServer

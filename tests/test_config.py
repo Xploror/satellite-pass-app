@@ -28,6 +28,7 @@ def test_load_mission_info(file_paths: list):
         sats, lab, out_type = load_mission_info(file_path)
 
         if itr == 0:
+            out_type = out_type[-1]
             assert len(sats) == 8
             assert sats[0].norad_id == 25544
             assert sats[0].color == "Red"
@@ -56,6 +57,7 @@ def test_load_mission_info(file_paths: list):
             assert isinstance(out_type.visibility, VisibilityCfg)
             assert isinstance(out_type.output, OutputCfg)
         elif itr == 1:
+            out_type = out_type[0]
             assert len(sats) == 8
             assert sats[0].norad_id == 25544
             assert sats[0].color == "Red"
@@ -64,6 +66,7 @@ def test_load_mission_info(file_paths: list):
             assert lab.min_elev == 5
             assert out_type == 3
         elif itr == 2:
+            out_type = out_type[0]
             claude_loc = claude_geoloc("Blacksburg")
             assert len(sats) == 4
             assert sats[0].norad_id == 25544
