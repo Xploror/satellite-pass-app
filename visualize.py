@@ -21,7 +21,7 @@ DEFAULT_OUTPUT = "visualizations/satellite_pass.gif"
 EARTH_RADIUS_KM = 6371.0  # Earth mean radius
 WINDOW_SEC = 1200  # N2YO's documented cap for the positions endpoint
 SAMPLE_INTERVAL_SEC = 5  # matches main.py's polling cadence
-# MAP_HALF_SPAN_DEG = 70
+MAP_HALF_SPAN_DEG = 70  # None -> Entire earth
 
 
 def fov_boundary(lab: Lab, altitude_km: float, num_points: int = 180) -> tuple:
@@ -55,6 +55,45 @@ def fov_boundary(lab: Lab, altitude_km: float, num_points: int = 180) -> tuple:
         lons.append(math.degrees(lon2))
 
     return lats, lons
+
+
+def merge_sectors(sectors: tuple) -> list:
+    """
+    Merges touching/overlapping azimuth sectors (also across north) into (start, end) pairs.
+
+    A wrapping sector has end < start, e.g. (330, 30). A full circle returns no sectors.
+    """
+
+    spans = []
+    for lo, hi in sectors:
+        spans += [(lo, 360.0), (0.0, hi)] if lo > hi else [(lo, hi)]  # split wraps at north
+    spans.sort()
+    merged = [list(spans[0])]
+    for lo, hi in spans[1:]:
+        if lo <= merged[-1][1]:  # touching or overlapping
+            merged[-1][1] = max(merged[-1][1], hi)
+        else:
+            merged.append([lo, hi])
+    if len(merged) > 1 and merged[0][0] == 0 and merged[-1][1] == 360:  # join across north
+        merged = [[merged[-1][0], merged[0][1] + 360], *merged[1:-1]]
+    if len(merged) == 1 and merged[0][1] - merged[0][0] >= 360:  # full circle: no edges
+        return []
+    return [(lo % 360, hi % 360) for lo, hi in merged]
+
+
+def sector_rays(lab: Lab, fov: tuple, sectors: tuple) -> list:
+    """
+    Builds one lab-to-FOV ray per azimuth sector edge, as a nested list of ([lons], [lats]).
+    """
+
+    fov_lats, fov_lons = fov
+    n = len(fov_lats) - 1  # FOV points are evenly spaced in bearing over 360 degrees
+    rays = []
+    for lo, hi in merge_sectors(sectors):
+        for az in (lo, hi):
+            i = round(az % 360 * n / 360)
+            rays.append(([lab.lng, fov_lons[i]], [lab.lat, fov_lats[i]]))
+    return rays
 
 
 def average_altitude(trajectory: list) -> float:
@@ -107,22 +146,27 @@ def build_animation(
     steps: list,
     fovs: dict,
     strips: dict,
+    az_sector: tuple,
 ) -> tuple:
     """
     Builds the animation: static basemap/lab/FOV drawn once, satellite/link artists move per frame.
     """
 
     fig, ax = plt.subplots(subplot_kw={"projection": ccrs.PlateCarree()}, figsize=(10, 6))
-    ax.set_global()  # type: ignore
-    # ax.set_extent(
-    #     [
-    #         lab.lng - MAP_HALF_SPAN_DEG,
-    #         lab.lng + MAP_HALF_SPAN_DEG,
-    #         max(lab.lat - MAP_HALF_SPAN_DEG, -90),
-    #         min(lab.lat + MAP_HALF_SPAN_DEG, 90),
-    #     ],
-    #     crs=ccrs.PlateCarree(),
-    # )  # type: ignore
+    # geodesic interpolation threshold
+    ax.projection.threshold = 0.01  # type: ignore
+    if MAP_HALF_SPAN_DEG is None:
+        ax.set_global()  # type: ignore
+    else:
+        ax.set_extent(
+            [
+                lab.lng - MAP_HALF_SPAN_DEG,
+                lab.lng + MAP_HALF_SPAN_DEG,
+                max(lab.lat - MAP_HALF_SPAN_DEG, -90),
+                min(lab.lat + MAP_HALF_SPAN_DEG, 90),
+            ],
+            crs=ccrs.PlateCarree(),
+        )  # type: ignore
     ax.add_feature(cfeature.OCEAN, facecolor="#cfe8f3")  # type: ignore
     ax.add_feature(cfeature.LAND, facecolor="#f0efe9")  # type: ignore
     ax.add_feature(cfeature.COASTLINE, linewidth=0.5)  # type: ignore
@@ -140,6 +184,20 @@ def build_animation(
         zorder=1,
         transform=ccrs.PlateCarree(),
     )
+
+    ray_lines = [  # azimuth-sector rays: shown only while at least one satellite is visible
+        ax.plot(
+            [],
+            [],
+            linestyle="--",
+            color="black",
+            linewidth=1,
+            alpha=0.8,
+            zorder=1,
+            transform=ccrs.Geodetic(),
+        )[0]
+        for _ in range(2*len(az_sector)+1)
+    ]
 
     fov_bound = {
         sat.norad_id: ax.plot(
@@ -203,6 +261,7 @@ def build_animation(
 
     def update(frame_idx: int) -> list:
         step = steps[frame_idx]
+        vis_traj = []
         for sat in sats:
             position = trajectories[sat.norad_id][step]
             is_visible = visibilities[sat.norad_id][step]
@@ -211,11 +270,21 @@ def build_animation(
                 links[sat.norad_id].set_data([lab.lng, position["lng"]], [lab.lat, position["lat"]])
                 fov_lats, fov_lons = fovs[sat.norad_id]
                 fov_bound[sat.norad_id].set_data(fov_lons, fov_lats)
+                vis_traj.append(trajectories[sat.norad_id])
             else:
                 links[sat.norad_id].set_data([], [])
                 fov_bound[sat.norad_id].set_data([], [])
+        any_visible = any(v[step] for v in visibilities.values())
+        rays: list = []  # sector rays end at the farthest (highest-altitude) currently visible FOV
+        if az_sector and vis_traj:
+            max_alt = max(average_altitude(traj) for traj in vis_traj)
+            rays = sector_rays(
+                lab, fov_boundary(lab, max_alt, num_points=360), az_sector
+            )
+        for ray_line, (ray_lngs, ray_lats) in zip(ray_lines, rays):
+            ray_line.set_data(*((ray_lngs, ray_lats) if any_visible else ([], [])))
         time_text.set_text(f"t+{step}s")
-        return [*markers.values(), *links.values(), *fov_bound.values(), time_text]
+        return [*markers.values(), *links.values(), *fov_bound.values(), *ray_lines, time_text]
 
     anim = FuncAnimation(fig, update, frames=len(steps), interval=200, blit=False)
     return fig, anim
@@ -249,8 +318,12 @@ def main() -> None:
         sat.norad_id: fov_boundary(lab, average_altitude(trajectories[sat.norad_id]))
         for sat in sats
     }
+    if config and config.visibility.criterion in ("aer", "both"):  # azimuth only applies to AER
+        az_sec = config.visibility.aer.azimuth_deg
+    else:
+        az_sec = ()
 
-    fig, anim = build_animation(sats, lab, trajectories, visibilties, steps, fovs, strips)
+    fig, anim = build_animation(sats, lab, trajectories, visibilties, steps, fovs, strips, az_sec)
 
     out_dir = os.path.dirname(output_path)
     if out_dir and not os.path.isdir(out_dir):
