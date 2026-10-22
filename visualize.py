@@ -196,7 +196,7 @@ def build_animation(
             zorder=1,
             transform=ccrs.Geodetic(),
         )[0]
-        for _ in range(2*len(az_sector)+1)
+        for _ in range(2 * len(az_sector) + 1)
     ]
 
     fov_bound = {
@@ -278,9 +278,7 @@ def build_animation(
         rays: list = []  # sector rays end at the farthest (highest-altitude) currently visible FOV
         if az_sector and vis_traj:
             max_alt = max(average_altitude(traj) for traj in vis_traj)
-            rays = sector_rays(
-                lab, fov_boundary(lab, max_alt, num_points=360), az_sector
-            )
+            rays = sector_rays(lab, fov_boundary(lab, max_alt, num_points=360), az_sector)
         for ray_line, (ray_lngs, ray_lats) in zip(ray_lines, rays):
             ray_line.set_data(*((ray_lngs, ray_lats) if any_visible else ([], [])))
         time_text.set_text(f"t+{step}s")
