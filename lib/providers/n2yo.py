@@ -14,7 +14,7 @@ def fetch_API(sat_objs: list, lab_obj, sec_ahead: int = 1) -> None:
 
     lab_lat = lab_obj.lat
     lab_lng = lab_obj.lng
-    lab_alt = 0
+    lab_alt = lab_obj.alt_m
     min_elev = lab_obj.min_elev
     parent_url = "https://api.n2yo.com/rest/v1/satellite/"
 
@@ -55,7 +55,7 @@ def fetch_trajectory(sat_objs: list, lab_obj, sec_ahead: int = 300) -> tuple[dic
 
     lab_lat = lab_obj.lat
     lab_lng = lab_obj.lng
-    lab_alt = 0
+    lab_alt = lab_obj.alt_m
     min_elev = lab_obj.min_elev
     parent_url = "https://api.n2yo.com/rest/v1/satellite/"
 
