@@ -1,11 +1,18 @@
+import csv
 import datetime
+import json
 import os
 import socket
+import sys
 import threading
 import time
+from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from typing import Any
+
+from lib.providers.tle import tle_epoch
+from lib.utils import colored_string, list_tuple_conversion
 
 
 class OutputWriter:
@@ -113,11 +120,13 @@ class HTTPWriter(OutputWriter):
             self._this_thread.start()
         except OSError:
             raise RuntimeError(
-                "\033[33m"
-                + self.host
-                + "/"
-                + str(self.port)
-                + " seems unavailable. Try killing the process\033[0m"
+                colored_string(
+                    self.host
+                    + "/"
+                    + str(self.port)
+                    + " seems unavailable. Try killing the process",
+                    "yellow",
+                )
             )
 
     def stop_server(self):
@@ -258,3 +267,214 @@ def author(out_type: int, out_f: str, host: str, port: int) -> OutputWriter:
         raise ValueError("Invalid output type specified.")
 
     return writer
+
+
+class AccessReport:
+    """
+    Collects access intervals per satellite and writes them as stdout / csv / json.
+    """
+
+    TIME_FMT = "%Y-%m-%d %H:%M:%S"
+    CSV_FIELDS = [
+        "norad_id",
+        "sat_name",
+        "pass_no",
+        "rev_aos",
+        "rev_los",
+        "aos_utc",
+        "los_utc",
+        "duration_s",
+        "max_el_deg",
+        "tca_utc",
+        "aos_az_deg",
+        "los_az_deg",
+        "min_range_km",
+        "aos_truncated",
+        "los_truncated",
+    ]
+
+    def __init__(self, lab, report_cfg):
+        self.lab = lab
+        self.cfg = report_cfg
+        self.entries: list = []  # (sat, intervals)
+        self.generated_utc = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
+        self.report_header()  # TODO
+
+    @staticmethod
+    def _flags(interval) -> str:
+        flags = []
+        if interval.aos_truncated:
+            flags.append("AOS<window")
+        if interval.los_truncated:
+            flags.append("LOS>window")
+        return ",".join(flags)
+
+    @staticmethod
+    def _json_default(value):
+        if isinstance(value, datetime.datetime):
+            return value.isoformat()
+        raise TypeError(f"{type(value).__name__} is not JSON serializable")
+
+    def report_header(self) -> None:
+        """
+        Stores the header information for the report.
+        """
+        self.report_header_info = None
+
+    def _criterion_summary(self) -> str:
+        vis = self.cfg.visibility
+        el_lims = list_tuple_conversion(vis.aer.elevation_deg)
+        az_sectors = list_tuple_conversion(vis.aer.azimuth_deg)
+        rng_min, rng_max = vis.aer.range_km
+        parts = []
+        if vis.criterion in ("aer", "both"):
+            parts.append(
+                f"el {el_lims} deg, az {az_sectors} deg, "
+                f"range [{rng_min:g}, {'inf' if rng_max is None else f'{rng_max:g}'}] km"
+            )
+        if vis.criterion in ("los", "both"):
+            parts.append(f"LOS grazing {vis.los.grazing_altitude_km:g} km")
+        parts.append(f"refraction {'on' if vis.apply_refraction else 'off'}")
+        return " | ".join(parts)
+
+    def _tle_summary(self, sat) -> str:
+        if sat.tle is None:
+            return "no TLE"
+        epoch = tle_epoch(sat.tle[0])
+        age_days = (self.cfg.window.start_utc - epoch).total_seconds() / 86400
+        return (
+            f"TLE source: {sat.tle_source}, "
+            f"TLE epoch: {epoch:{self.TIME_FMT}} UTC ({age_days:+.2f} d)"
+        )
+
+    def _rows(self) -> list:
+        rows = []
+        for _sat, intervals in self.entries:
+            for iv in intervals:
+                row = asdict(iv)
+                for key in ("aos_utc", "los_utc", "tca_utc"):
+                    row[key] = row[key].isoformat()
+                rows.append(row)
+        return rows
+
+    def add(self, sat, intervals: list) -> None:
+        self.entries.append((sat, intervals))
+
+    def write(self) -> list:
+        """
+        Writes every configured format; returns the paths of the files created.
+        """
+
+        if not self.entries:
+            print(
+                colored_string("Cannot write an empty report!", "red"),
+                file=sys.stderr,
+            )
+            sys.exit(0)
+
+        paths = []
+        file_name = f"{self.cfg.output.filename_prefix}_{self.generated_utc:%Y%m%dT%H%M%SZ}"
+        out_dir = Path(self.cfg.output.directory)
+        if {"csv", "json"} & set(self.cfg.output.formats):
+            out_dir.mkdir(parents=True, exist_ok=True)
+
+        for fmt in self.cfg.output.formats:
+            if fmt == "stdout":
+                print(self.render_text())
+            elif fmt == "csv":
+                paths.append(self._write_csv(out_dir / f"{file_name}.csv"))
+            elif fmt == "json":
+                paths.append(self._write_json(out_dir / f"{file_name}.json"))
+        return paths
+
+    def render_text(self) -> str:
+        """
+        Header block with station/window/criterion settings, then one table per satellite.
+        """
+
+        window, vis, lab = self.cfg.window, self.cfg.visibility, self.cfg.station
+        end = window.start_utc + datetime.timedelta(hours=window.duration_hours)
+        lines = [
+            "=" * 118,
+            "ACCESS REPORT",
+            f"Generated : {self.generated_utc:{self.TIME_FMT}} UTC",
+            f"Station   : lat {lab.lat_deg:.5f}  lon {lab.lng_deg:.5f}"
+            f"  alt {lab.altitude_m:.1f} m  minimum elevation {lab.min_elev_deg:.1f} deg",
+            f"Window    : {window.start_utc:{self.TIME_FMT}} -> {end:{self.TIME_FMT}} UTC"
+            f"  (duration {window.duration_hours:g} hr, step {window.time_step_s:g} s, "
+            f"refine {'on' if window.refine_edges else 'off'})",
+            f"Criterion : {vis.criterion}  | {self._criterion_summary()}",
+            "=" * 118,
+        ]
+
+        header = (
+            f"{'Pass':^4} {'Rev(AOS)':^8} {'Rev(LOS)':^8}  {'UTC(AOS)':^19}  {'UTC(LOS)':^19} "
+            f"{'Dur (s)':^8} {'MaxEl':^6}  {'TCA':^8} {'Az(AOS)':^6} {'Az(LOS)':^6} "
+            f"{'MinRng':^9}  Flags"
+        )
+        for sat, intervals in self.entries:
+            lines.append("")
+            lines.append(
+                colored_string(
+                    f"{sat.name} (NORAD {sat.norad_id}) - {self._tle_summary(sat)}", "green"
+                )
+            )
+            if not intervals:
+                lines.append(colored_string(" No access in window", "yellow"))
+                continue
+            lines.append(header)
+            lines.append("-" * len(header))
+            for iv in intervals:
+                lines.append(
+                    f"{iv.pass_no:^4} {iv.rev_aos:^8} {iv.rev_los:^8}  "
+                    f"{iv.aos_utc:{self.TIME_FMT}}  {iv.los_utc:{self.TIME_FMT}} "
+                    f"{iv.duration_s:^7.1f} {iv.max_el_deg:^7.1f}  {iv.tca_utc:%H:%M:%S} "
+                    f"{iv.aos_az_deg:^7.1f} {iv.los_az_deg:^7.1f} {iv.min_range_km:^8.1f}  "
+                    f"{self._flags(iv)}"
+                )
+        return "\n".join(lines)
+
+    def _write_csv(self, path: Path) -> Path:
+        with open(path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=self.CSV_FIELDS)
+            writer.writeheader()
+            writer.writerows(self._rows())
+        return path
+
+    def _write_json(self, path: Path) -> Path:
+        satellites = []
+        for sat, intervals in self.entries:
+            satellites.append(
+                {
+                    "norad_id": sat.norad_id,
+                    "name": sat.name,
+                    "tle_source": sat.tle_source,
+                    "tle": list(sat.tle) if sat.tle else None,
+                    "tle_epoch_utc": tle_epoch(sat.tle[0]).isoformat() if sat.tle else None,
+                    "intervals": [row for row in self._rows() if row["norad_id"] == sat.norad_id],
+                }
+            )
+        station_setting = self.cfg.station
+        window_setting = self.cfg.window
+        vis_setting = self.cfg.visibility
+        tle_setting = self.cfg.tle
+        output_setting = self.cfg.output
+        document = {
+            "meta": {
+                "generated_utc": self.generated_utc.isoformat(),
+                "simulation-window": asdict(window_setting),
+                "station": {
+                    "lat": station_setting.lat_deg,
+                    "lon": station_setting.lng_deg,
+                    "alt": station_setting.altitude_m,
+                    "min_elev": station_setting.min_elev_deg,
+                    "visibility": asdict(vis_setting),
+                },
+                "tle-settings": asdict(tle_setting),
+                "output-settings": asdict(output_setting),
+            },
+            "satellites": satellites,
+        }
+        with open(path, "w") as f:
+            json.dump(document, f, indent=2, default=self._json_default)
+        return path

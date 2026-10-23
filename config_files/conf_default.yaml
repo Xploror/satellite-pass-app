@@ -16,6 +16,43 @@ Lab:
   City: Blacksburg
   Latitude: -33.4489
   Longitude: -70.6693
+  altitude_m: 0               # lab height above the WGS84 ellipsoid
   min_elevation: 30
 
-Output: 3  # 1-> STDOUT | 2-> FILE | 3-> TCP connection | 4 -> HTTPServer
+Mode:
+  Async: false
+
+######################## Sync output settings ################################
+Sync_Output: 3  # 1-> STDOUT | 2-> FILE | 3-> TCP connection | 4 -> HTTPServer
+
+#################### Async Access report settings ############################
+Report:
+
+  Window:
+    start_utc: now              # "now" or ISO-8601, e.g. 2026-09-26T00:00:00Z
+    duration_hours: 24
+    time_step_s: 10             # sampling granularity; passes shorter than this can be missed
+    refine_edges: true          # bisect AOS/LOS between samples
+    refine_tolerance_s: 0.1
+
+  TLE:
+    sources: [celestrak, n2yo]  # priority order; "file" is also allowed
+    file_path: null             # 2LE/3LE file used when "file" is in sources
+    cache_dir: tle_cache
+    cache_max_age_hours: 2      # CelesTrak asks for at most one download per object every 2 h
+    max_epoch_age_days: 7       # warn when the TLE epoch is this far from the window start
+
+  Visibility:
+    criterion: aer              # aer | los | both (both = AER and LOS)
+    apply_refraction: false     # standard-atmosphere refraction applied to elevation (AER only)
+    AER:
+      elevation_deg: [null, 90] # null min -> Lab.min_elevation from the mission config
+      azimuth_deg: [[0, 360]]   # allowed sectors; lo > hi wraps through north, e.g. [300, 60]
+      range_km: [0, null]       # null = unbounded
+    LOS:
+      grazing_altitude_km: 0    # line of sight must clear the Earth by this height
+
+  Async_Output:
+    formats: [stdout, csv, json]
+    directory: reports
+    filename_prefix: access_report
